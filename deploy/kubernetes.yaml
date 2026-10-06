@@ -44,7 +44,7 @@ spec:
       containers:
         - name: control-plane
           # Build and push your image, then substitute its immutable digest.
-          image: ghcr.io/zyvorai/duvora:0.4.0
+          image: ghcr.io/zyvorai/duvora:0.5.0
           imagePullPolicy: IfNotPresent
           env:
             - name: DUVORA_KEYS

@@ -29,6 +29,6 @@ Use the namespace-scoped `get/list` role in `deploy/dpf-readonly-role.yaml`. Bin
 - [DPU types](https://github.com/NVIDIA/doca-platform/blob/public-main/api/provisioning/v1alpha1/dpu_types.go), blob `487785f92710a3febe5f8f189b71aaf6346401d5`.
 - [Provisioning API group](https://github.com/NVIDIA/doca-platform/blob/public-main/api/provisioning/v1alpha1/groupversion_info.go), blob `2d3949439837cb6c0b3e4097ea27b16b8b709c33`.
 - [Canonical/BlueField OS explanation](https://canonical.com/blog/ubuntu-and-nvidia-bluefield-3).
-- [Netra UX reference](https://github.com/zyvorai/netra/blob/main/web/src/styles.css), inspected for product direction only; source not incorporated.
+- [Netra UX reference](https://github.com/zyvorai/zyvor-netra/blob/main/web/src/styles.css), inspected for product direction only; source not incorporated.
 
 The bridge is fixture-tested. Live DPF compatibility, hardware provisioning, firmware safety, and policy offload remain unverified. Pin a qualified vendor release before implementing mutating adapters.

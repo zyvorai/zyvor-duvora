@@ -3,7 +3,7 @@
 Duvora gets kernel observations and node isolation from one of two providers:
 
 - **Native** (default). `duvora-agent --ebpf auto` runs on each host and loads Duvora's own eBPF programs (`bpf/duvora_*.c`, compiled to `duvora/bpf/obj/*.o`) through the system libbpf, from Python via ctypes. There is no sidecar and no second language on the node. The agent posts counters to the control plane and pulls the desired isolation for its host.
-- **Netra** (optional). Duvora polls a [Netra](https://github.com/zyvorai/netra) controller over its HTTP API (`DUVORA_NETRA_URL`, `DUVORA_NETRA_API_KEY`), and Netra's own agent does the kernel work.
+- **Netra** (optional). Duvora polls a [Netra](https://github.com/zyvorai/zyvor-netra) controller over its HTTP API (`DUVORA_NETRA_URL`, `DUVORA_NETRA_API_KEY`), and Netra's own agent does the kernel work.
 
 `DUVORA_EBPF_SOURCE` chooses: `native`, `netra`, or `auto` (the default). In `auto`, a host whose native agent has reported in the last 90 seconds uses the native data; Netra fills in hosts without an agent. `GET /api/v1/ebpf`, the console and `duvoractl ebpf` show the provider for each device.
 

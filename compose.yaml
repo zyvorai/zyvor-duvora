@@ -1,7 +1,7 @@
 services:
   control-plane:
     build: .
-    image: ghcr.io/zyvorai/duvora:0.4.0
+    image: ghcr.io/zyvorai/duvora:0.5.0
     ports:
       - "127.0.0.1:8787:8787"
     environment:
@@ -9,6 +9,14 @@ services:
       DUVORA_ADMIN_PASSWORD: ${DUVORA_ADMIN_PASSWORD:-Admin@321}
       DUVORA_KEYS: ${DUVORA_KEYS:-}
       DUVORA_DEMO: ${DUVORA_DEMO:-1}
+      # Optional integrations; empty disables them. See docs/OPERATIONS.md.
+      DUVORA_SIEM_URL: ${DUVORA_SIEM_URL:-}
+      DUVORA_SIEM_KEY: ${DUVORA_SIEM_KEY:-}
+      DUVORA_SIEM_SYSLOG: ${DUVORA_SIEM_SYSLOG:-}
+      DUVORA_NOTIFY_URL: ${DUVORA_NOTIFY_URL:-}
+      DUVORA_REQUIRE_SCAN: ${DUVORA_REQUIRE_SCAN:-0}
+      DUVORA_AI_URL: ${DUVORA_AI_URL:-}
+      DUVORA_AI_MODEL: ${DUVORA_AI_MODEL:-}
     volumes:
       - state:/data
     read_only: true

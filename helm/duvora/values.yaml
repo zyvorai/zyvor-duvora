@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/zyvorai/duvora
-  tag: "0.4.0"
+  tag: "0.5.0"
   pullPolicy: IfNotPresent
 
 auth:
@@ -35,11 +35,14 @@ agent:
   enabled: false
   image:
     repository: ghcr.io/zyvorai/duvora-agent
-    tag: "0.4.0"
+    tag: "0.5.0"
     pullPolicy: IfNotPresent
   ebpf: auto               # auto loads what it can; required fails the pod instead
   interfaces: ""           # comma-separated; default: the interfaces carrying a default route
   isolation: true          # load node isolation (off/shadow/enforce come from the control plane)
+  steering: true           # load duvora_steer (TCX); rule sets and stages come from the control plane. Not DPU offload.
+  aiDiscovery: true        # report listening AI services from /proc (inside the pod: by port; process names need hostPID)
+  tokenRotation: true      # exchange the bootstrap key for short-lived rotating tokens (/agent/token)
   intervalSeconds: 15
   failsafeSeconds: 60      # enforce falls back to shadow after this long without the control plane
   url: ""                  # default: the Duvora service inside the cluster
@@ -68,6 +71,58 @@ netra:
   nodeMap: ""            # JSON object of Duvora device id or host to Netra node
   enforce: false         # allow promoting shadow isolation to enforcement (same as ebpf.enforce)
   intervalSeconds: 15
+
+# Optional language model for the ops copilot, incident narratives and the briefing summary,
+# over an OpenAI-compatible API (Ollama, vLLM, LM Studio or a hosted provider). Anomalies,
+# forecasts and allow-list suggestions run locally without it. See docs/AI.md.
+ai:
+  url: ""                # base URL ending in /v1, e.g. http://ollama.ai.svc:11434/v1
+  model: ""              # e.g. llama3.1:8b or gpt-4o-mini
+  key: ""                # API key, if the endpoint needs one
+  existingSecret: ""     # Secret with key ai-api-key
+  redact: false          # replace IP addresses and host names with tokens before text leaves Duvora
+  allowHttp: false       # allow plain HTTP to a non-loopback endpoint (in-cluster Ollama)
+  timeoutSeconds: 60
+
+# Agent identity. mtls: off, optional (verify client certificates when presented) or require
+# (agents must present a certificate naming their host; needs tls.enabled and agentCaCert).
+agentIdentity:
+  mtls: "off"
+  agentCaCert: ""        # PEM of the CA that signs agent client certificates
+  tokenTtlSeconds: 86400 # rotating agent token lifetime (600 to 2592000)
+  bootstrapOnly: false   # static agent keys may only mint tokens, not report
+
+# SIEM export of audit events, incidents, steering verdicts and AI findings. See docs/OPERATIONS.md.
+siem:
+  url: ""                # HTTPS webhook receiving JSON batches
+  key: ""                # bearer token for the webhook
+  syslog: ""             # udp://host:514 or tcp://host:601 (RFC 5424)
+  events: ""             # comma-separated categories; empty = all
+  verdicts: drop         # which steering verdicts to export: drop, all or none
+  caCert: ""             # PEM pinning the webhook's certificate
+  allowHttp: false
+
+# Image and model artifact scanning before deploy.
+scan:
+  required: false        # block deploys of images without a passed scan
+  maxMb: 512
+  registryToken: ""      # bearer token for private registries
+  caCert: ""
+
+# Threat-intel feeds are configured in the console or CLI; these only affect fetching.
+intel:
+  caCert: ""
+  allowHttp: false
+
+# Playbook notifications (draft-only playbooks may post to this webhook).
+notify:
+  url: ""
+  key: ""
+  caCert: ""
+
+# Use an existing Secret for the keys and CA files above instead (keys: siem-key, notify-key,
+# registry-token, agent-ca.crt, siem-ca.crt, scan-ca.crt, intel-ca.crt, notify-ca.crt).
+integrationsSecret: ""
 
 service:
   type: NodePort

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import { AUTH_EXPIRED, api, signOut } from './api';
+import Copilot from './components/Copilot';
 import Login from './components/Login';
 import Nav from './components/Nav';
 import PageHero, { type HeroTint } from './components/PageHero';
@@ -7,17 +8,23 @@ import PlanDialog from './components/PlanDialog';
 import { Notice } from './components/kit';
 import type { Page } from './lib/navGroups';
 import { readRoute, routeHash } from './lib/route';
+import Agents from './pages/Agents';
+import AiTraffic from './pages/AiTraffic';
 import AlertRules from './pages/AlertRules';
 import Audit from './pages/Audit';
 import Capabilities from './pages/Capabilities';
 import Devices from './pages/Devices';
 import Incidents from './pages/Incidents';
+import Insights from './pages/Insights';
 import Isolation from './pages/Isolation';
 import Operations from './pages/Operations';
 import Overview from './pages/Overview';
+import Playbooks from './pages/Playbooks';
 import Report from './pages/Report';
 import Scorecard from './pages/Scorecard';
 import Services from './pages/Services';
+import Steering from './pages/Steering';
+import Threats from './pages/Threats';
 import Telemetry from './pages/Telemetry';
 import Topology from './pages/Topology';
 import Users from './pages/Users';
@@ -59,6 +66,36 @@ export const pageHero: Record<Page, { eyebrow: string; title: string; lede: stri
     lede: 'Preview an allow-list and test its modeled verdict before applying a simulated isolation change.',
     tint: 'red',
   },
+  steering: {
+    eyebrow: 'Traffic steering',
+    title: 'Decide what gets inspected.',
+    lede: 'Ordered 5-tuple rules bypass, allow, inspect or drop traffic — in simulation, or on the host kernel through the Duvora agent. Shadow first, leased enforce, bypass on demand.',
+    tint: 'amber',
+  },
+  'ai-traffic': {
+    eyebrow: 'AI security',
+    title: 'See what talks to models.',
+    lede: 'LLM endpoints and AI services across the fleet, with prompt-injection, secret and personal-data findings from inspected traffic. Inspection never blocks.',
+    tint: 'purple',
+  },
+  threats: {
+    eyebrow: 'AI security',
+    title: 'Known bad, kept out.',
+    lede: 'Threat-intel feeds matched against observed traffic, and artifact scans that keep unsafe images and models from deploying.',
+    tint: 'red',
+  },
+  playbooks: {
+    eyebrow: 'AI security',
+    title: 'Ready before you are.',
+    lede: 'Incident playbooks explain, draft a block, and notify. Drafts are previews: an administrator reviews and types the confirmation.',
+    tint: 'green',
+  },
+  agents: {
+    eyebrow: 'Agents & SIEM',
+    title: 'Trust, then verify.',
+    lede: 'Rotating agent tokens, optional mutual TLS bound to each host, and the export of audit, verdict and AI-finding events to your SIEM.',
+    tint: 'purple',
+  },
   operations: {
     eyebrow: 'Operations',
     title: 'Every change, accounted for.',
@@ -69,6 +106,12 @@ export const pageHero: Record<Page, { eyebrow: string; title: string; lede: stri
     title: 'When a rule fires.',
     lede: 'Temperature, drops, degraded health, stale observations, and failed jobs — one incident per rule and device, resolved automatically when the condition clears.',
     tint: 'red',
+  },
+  insights: {
+    eyebrow: 'Insights',
+    title: 'Notice it before it pages you.',
+    lede: 'Learned baselines, threshold forecasts, and new egress destinations, computed locally from recorded telemetry. Observe-only.',
+    tint: 'purple',
   },
   'alert-rules': {
     eyebrow: 'Alert rules',
@@ -220,8 +263,14 @@ function Console({
     telemetry: <Telemetry />,
     services: <Services />,
     isolation: <Isolation />,
+    steering: <Steering />,
     operations: <Operations />,
+    'ai-traffic': <AiTraffic />,
+    threats: <Threats />,
+    playbooks: <Playbooks />,
+    agents: <Agents />,
     incidents: <Incidents />,
+    insights: <Insights />,
     'alert-rules': <AlertRules />,
     scorecard: <Scorecard />,
     report: <Report />,
@@ -278,6 +327,7 @@ function Console({
           void refresh();
         }}
       />
+      <Copilot />
     </>
   );
 }

@@ -1,16 +1,21 @@
+import { useState } from 'react';
 import { download, saveJSON } from '../api';
 import { Badge, Empty, Metrics, Section, severityTone } from '../components/kit';
-import { when } from '../lib/format';
+import { eta, metric, percent, when, zLabel } from '../lib/format';
 import { useFleet, useResource } from '../store';
 import type { Briefing } from '../types';
 import { Ring } from './Scorecard';
 
 export default function Report() {
   const { toast } = useFleet();
-  const { data, reload } = useResource<Briefing>('report');
+  const [ai, setAi] = useState(false);
+  const { data, reload } = useResource<Briefing>(ai ? 'report?ai=1' : 'report', 0, [ai]);
   if (!data) return null;
   const actions = (
     <>
+      <button type="button" className={ai ? 'primary' : 'btn-secondary'} aria-pressed={ai} onClick={() => setAi(!ai)}>
+        AI summary
+      </button>
       <button type="button" className="btn-secondary" onClick={() => void reload()}>
         Refresh
       </button>
@@ -43,6 +48,53 @@ export default function Report() {
           </div>
         </div>
       </Section>
+      {data.summary && (
+        <Section eyebrow="SUMMARY" title="At a glance" lede={data.summary_source === 'llm' ? 'Written by the language model from this briefing. Review before acting.' : 'Generated from the briefing data; no language model is configured.'}>
+          <p>{data.summary}</p>
+        </Section>
+      )}
+      {(data.anomalies?.length || data.forecasts?.length || data.allowlist_suggestions?.length) ? (
+        <Section eyebrow="INSIGHTS" title="Trends and suggestions">
+          <ul className="dv-steps">
+            {data.anomalies?.map((a) => (
+              <li key={`a${a.device}${a.metric}`}>
+                {a.metric} on {a.device}: {metric(a.value)} vs baseline {metric(a.baseline)} ({zLabel(a.z)})
+              </li>
+            ))}
+            {data.forecasts?.map((f) => (
+              <li key={`f${f.device}${f.metric}`}>
+                {f.metric} on {f.device} crosses {f.threshold} in about {eta(f.eta_hours)}
+              </li>
+            ))}
+            {data.allowlist_suggestions?.map((s) => (
+              <li key={`s${s.device}`}>
+                Shadow allow-list for {s.device}: {s.cidr} {s.ports.length ? `ports ${s.ports.join(', ')}` : 'any port'} covers {percent(s.coverage_bytes)} of observed bytes
+              </li>
+            ))}
+          </ul>
+        </Section>
+      ) : null}
+      {data.ai_posture && (
+        <Section
+          eyebrow="AI SECURITY"
+          title={`AI posture: ${data.ai_posture.score} (${data.ai_posture.grade})`}
+          lede={`Steering: ${data.ai_posture.steering.shadow} shadow, ${data.ai_posture.steering.enforce} enforce, ${data.ai_posture.steering.bypass} bypassed of ${data.ai_posture.steering.devices} devices. ${data.ai_posture.note}`}
+        >
+          <div className="list">
+            {data.ai_posture.checks.map((c) => (
+              <div className="agent wide" key={c.name}>
+                <b>
+                  <Badge tone={c.status === 'pass' ? 'ok' : c.status === 'warn' ? 'warn' : 'bad'}>{c.status}</Badge> {c.name} · {c.score}/{c.weight}
+                </b>
+                <small>
+                  {c.detail}
+                  {c.action ? ` — ${c.action}` : ''}
+                </small>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
       <Section span={2} eyebrow="INCIDENTS" title="Active incidents">
         {data.incidents.length ? (
           <div className="list">

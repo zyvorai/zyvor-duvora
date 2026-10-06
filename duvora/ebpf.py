@@ -319,6 +319,13 @@ class EbpfMixin:
             kept = [r for r in self.netra_flows.get(d["id"], []) if (_parse_time(r.get("observedAt")) or 0) >= cutoff]
             s["flows"] = (s["flows"] + kept)[:NATIVE_FLOWS]
             self.ingest_node(d, s, now, provider="native")
+            raw = body["summary"]
+            self.ingest_steering(d, raw.get("steering"), now)
+            if isinstance(raw.get("inspections"), list):
+                self.record_inspections(d, raw["inspections"], now, "agent")
+            if isinstance(raw.get("ai_assets"), list):
+                self.record_assets(d, raw["ai_assets"], now, "agent")
+            self.put("devices", d["id"], d)
             return {"device": d["id"], "provider": "native"}
 
     def _set_isolation(self, d, ni, job_id=None):
@@ -442,6 +449,7 @@ class EbpfMixin:
         self.db.execute("INSERT INTO ebpf_state VALUES(?,?,?) ON CONFLICT(device) DO UPDATE SET body=excluded.body, updated=excluded.updated",
                         (d["id"], canonical(counters), now))
         self.netra_flows[d["id"]] = s["flows"]
+        self.observe_destinations(d["id"], s["flows"], now)
         isolation = s.get("isolation")
         source = NATIVE_SOURCE if provider == "native" else SOURCE
         d["ebpf"] = {
@@ -487,6 +495,7 @@ class EbpfMixin:
         if self.killed():
             self._demote_all(client, "kill switch")
         self._renew_leases(client)
+        self.steering_duties()
 
     def _run_netra_jobs(self, client):
         with self.transaction():
@@ -576,6 +585,8 @@ class EbpfMixin:
             self.netra["kill_switch"] = state
             self.event(actor, "ebpf.kill-switch", {"engaged": engaged})
         demoted = self._demote_all(self.netra_client, "kill switch") if engaged else {}
+        if engaged:
+            self.steering_duties()
         return {**state, "demoted": sorted(k for k, v in demoted.items() if v is None),
                 "errors": {k: v for k, v in demoted.items() if v}}
 

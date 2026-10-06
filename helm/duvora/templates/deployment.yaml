@@ -100,11 +100,99 @@ spec:
             - name: DUVORA_NETRA_INTERVAL
               value: {{ .Values.netra.intervalSeconds | quote }}
             {{- end }}
+            {{- if .Values.ai.url }}
+            - name: DUVORA_AI_URL
+              value: {{ .Values.ai.url | quote }}
+            - name: DUVORA_AI_MODEL
+              value: {{ required "ai.model is required when ai.url is set" .Values.ai.model | quote }}
+            {{- if or .Values.ai.key .Values.ai.existingSecret }}
+            - name: DUVORA_AI_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ai.existingSecret | default (printf "%s-ai" .Release.Name) }}
+                  key: ai-api-key
+            {{- end }}
+            - name: DUVORA_AI_REDACT
+              value: {{ ternary "1" "0" .Values.ai.redact | quote }}
+            - name: DUVORA_AI_ALLOW_HTTP
+              value: {{ ternary "1" "0" .Values.ai.allowHttp | quote }}
+            - name: DUVORA_AI_TIMEOUT
+              value: {{ .Values.ai.timeoutSeconds | quote }}
+            {{- end }}
             {{- if .Values.tls.enabled }}
             - name: DUVORA_TLS_CERT
               value: /tls/tls.crt
             - name: DUVORA_TLS_KEY
               value: /tls/tls.key
+            {{- end }}
+            {{- $int := include "duvora.integrationsSecretName" . }}
+            {{- $intOn := include "duvora.integrationsEnabled" . }}
+            {{- if ne (toString .Values.agentIdentity.mtls) "off" }}
+            {{- if not (and .Values.tls.enabled .Values.agentIdentity.agentCaCert) }}
+            {{- fail "agentIdentity.mtls needs tls.enabled and agentIdentity.agentCaCert" }}
+            {{- end }}
+            - name: DUVORA_AGENT_MTLS
+              value: {{ .Values.agentIdentity.mtls | quote }}
+            {{- end }}
+            {{- if .Values.agentIdentity.agentCaCert }}
+            - name: DUVORA_AGENT_CA
+              value: /integrations/agent-ca.crt
+            {{- end }}
+            - name: DUVORA_AGENT_TOKEN_TTL
+              value: {{ .Values.agentIdentity.tokenTtlSeconds | quote }}
+            - name: DUVORA_AGENT_BOOTSTRAP_ONLY
+              value: {{ ternary "1" "0" .Values.agentIdentity.bootstrapOnly | quote }}
+            {{- with .Values.siem.url }}
+            - name: DUVORA_SIEM_URL
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.siem.syslog }}
+            - name: DUVORA_SIEM_SYSLOG
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.siem.events }}
+            - name: DUVORA_SIEM_EVENTS
+              value: {{ . | quote }}
+            {{- end }}
+            - name: DUVORA_SIEM_VERDICTS
+              value: {{ .Values.siem.verdicts | quote }}
+            - name: DUVORA_SIEM_ALLOW_HTTP
+              value: {{ ternary "1" "0" .Values.siem.allowHttp | quote }}
+            {{- if .Values.siem.caCert }}
+            - name: DUVORA_SIEM_CA_FILE
+              value: /integrations/siem-ca.crt
+            {{- end }}
+            - name: DUVORA_REQUIRE_SCAN
+              value: {{ ternary "1" "0" .Values.scan.required | quote }}
+            - name: DUVORA_SCAN_MAX_MB
+              value: {{ .Values.scan.maxMb | quote }}
+            {{- if .Values.scan.caCert }}
+            - name: DUVORA_SCAN_CA_FILE
+              value: /integrations/scan-ca.crt
+            {{- end }}
+            - name: DUVORA_INTEL_ALLOW_HTTP
+              value: {{ ternary "1" "0" .Values.intel.allowHttp | quote }}
+            {{- if .Values.intel.caCert }}
+            - name: DUVORA_INTEL_CA_FILE
+              value: /integrations/intel-ca.crt
+            {{- end }}
+            {{- with .Values.notify.url }}
+            - name: DUVORA_NOTIFY_URL
+              value: {{ . | quote }}
+            {{- end }}
+            {{- if .Values.notify.caCert }}
+            - name: DUVORA_NOTIFY_CA_FILE
+              value: /integrations/notify-ca.crt
+            {{- end }}
+            {{- if $intOn }}
+            {{- range $env, $key := dict "DUVORA_SIEM_KEY" "siem-key" "DUVORA_NOTIFY_KEY" "notify-key" "DUVORA_REGISTRY_TOKEN" "registry-token" }}
+            - name: {{ $env }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $int }}
+                  key: {{ $key }}
+                  optional: true
+            {{- end }}
             {{- end }}
           ports:
             - name: http
@@ -142,7 +230,17 @@ spec:
               mountPath: /netra
               readOnly: true
             {{- end }}
+            {{- if include "duvora.integrationsEnabled" . }}
+            - name: integrations
+              mountPath: /integrations
+              readOnly: true
+            {{- end }}
       volumes:
+        {{- if include "duvora.integrationsEnabled" . }}
+        - name: integrations
+          secret:
+            secretName: {{ include "duvora.integrationsSecretName" . }}
+        {{- end }}
         - name: state
           persistentVolumeClaim:
             claimName: {{ .Release.Name }}-state

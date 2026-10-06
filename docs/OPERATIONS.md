@@ -101,9 +101,48 @@ If Netra also runs on the node, turn its node isolation off so only one egress f
 
 Before the first enforce on a remote host, arm a fallback that does not depend on the control plane, for example `sudo systemd-run --on-active=420 /bin/sh -c 'mkdir -p /run/duvora && touch /run/duvora/isolation-off'`, and stop the timer (`sudo systemctl stop <unit>.timer`) once you are done. SSH (local port 22), established TCP, ICMP, DHCP and the controller addresses are always allowed.
 
+## AI features
+
+Anomaly detection, forecasts, new-destination alerts, allow-list suggestions and incident evidence always run on the control plane with no configuration. Tune them as alert rules: `duvoractl rules anomaly --threshold 5` (z-score), `duvoractl rules forecast-breach --threshold 12` (hours), `duvoractl rules new-destination --disable`.
+
+To enable the copilot, written explanations and the AI briefing summary, point Duvora at an OpenAI-compatible endpoint:
+
+```bash
+# Local Ollama on the controller host
+DUVORA_AI_URL=http://127.0.0.1:11434/v1 DUVORA_AI_MODEL=llama3.1:8b python3 -m duvora.server
+# Helm, in-cluster Ollama
+helm upgrade duvora ./helm/duvora -n duvora --reuse-values \
+  --set ai.url=http://ollama.ai.svc:11434/v1 --set ai.model=llama3.1:8b --set ai.allowHttp=true --set ai.redact=true
+```
+
+`GET /api/v1/ai` (or the Insights page) shows whether a model is configured. A model that is down or slow does not break anything: explanations and summaries fall back to templates, and the copilot returns 503. Data sent, redaction and limits: [AI.md](AI.md).
+
+## Traffic steering and AI security
+
+The agent loads `duvora_steer` beside isolation unless `--no-steering` (Helm `agent.steering=false`) is set. Check with `sudo bpftool net show dev <uplink>`: `duvora_steer_ingress` and `duvora_steer_egress` should head the TCX chains. `/run/duvora/steering-off` on the host turns steering off locally. Shadow never drops traffic. Enforce needs `DUVORA_EBPF_ENFORCE=1`, a shadow run of the same rule set, and a typed confirmation, and it is leased like isolation.
+
+Before the first steering enforce on a remote host, arm the same kind of fallback as for isolation, with `steering-off` instead of `isolation-off`. SSH and the control-plane endpoint are always exempt. Workflow and limits: [STEERING.md](STEERING.md).
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `DUVORA_SIEM_URL` / `DUVORA_SIEM_KEY` | — | HTTPS webhook receiving JSON batches of `audit`, `verdict`, `ai-finding`, `intel` and `playbook` events, with a bearer key |
+| `DUVORA_SIEM_SYSLOG` | — | `udp://host:514` or `tcp://host:601`, RFC 5424 |
+| `DUVORA_SIEM_EVENTS` | all | Comma-separated categories to export |
+| `DUVORA_SIEM_VERDICTS` | `drop` | Steering verdicts to export: `drop`, `all` or `none` |
+| `DUVORA_SIEM_CA_FILE`, `DUVORA_SIEM_ALLOW_HTTP` | — | Pin a private CA; allow plain HTTP to a non-loopback receiver |
+| `DUVORA_AGENT_TOKEN_TTL` | 86400 | Rotating agent token lifetime in seconds (600 to 30 days); agents rotate at half-life |
+| `DUVORA_AGENT_BOOTSTRAP_ONLY` | off | `1`: static agent keys may only mint tokens, not report |
+| `DUVORA_AGENT_MTLS` / `DUVORA_AGENT_CA` | `off` | `optional` or `require` client certificates naming the agent's host; needs TLS and the CA file. Agents send `DUVORA_CLIENT_CERT` / `DUVORA_CLIENT_KEY` |
+| `DUVORA_REQUIRE_SCAN` | off | `1` blocks deploys of images without a passed artifact scan |
+| `DUVORA_SCAN_MAX_MB`, `DUVORA_REGISTRY_TOKEN`, `DUVORA_SCAN_CA_FILE` | 512, —, — | Scan size cap, private registry bearer token, private CA |
+| `DUVORA_INTEL_CA_FILE`, `DUVORA_INTEL_ALLOW_HTTP` | — | Threat-intel feed fetching |
+| `DUVORA_NOTIFY_URL`, `DUVORA_NOTIFY_KEY`, `DUVORA_NOTIFY_CA_FILE` | — | Webhook for playbook `notify` steps |
+
+In Helm, the same settings are under `siem.*`, `agentIdentity.*`, `scan.*`, `intel.*` and `notify.*`. Keys and CA files go into a `<release>-integrations` Secret, or into your own Secret named by `integrationsSecret`. `deploy-remote.sh` passes `DUVORA_SIEM_URL`, `DUVORA_SIEM_KEY`, `DUVORA_SIEM_SYSLOG`, `DUVORA_NOTIFY_URL`, `DUVORA_NOTIFY_KEY` and `DUVORA_REQUIRE_SCAN`.
+
 ## Netra eBPF (optional)
 
-Set `DUVORA_NETRA_URL` (HTTPS unless loopback) and `DUVORA_NETRA_API_KEY` to connect a [Netra](https://github.com/zyvorai/netra) controller; `DUVORA_NETRA_CA_FILE` pins a self-signed certificate. Devices map to Netra nodes by `DUVORA_NETRA_NODE_MAP` (JSON of device id or host to node), by host name, or, with `DUVORA_NETRA_DISCOVER=1`, as new `netra-<node>` devices. `DUVORA_NETRA_INTERVAL` (default 15 s) sets the polling period.
+Set `DUVORA_NETRA_URL` (HTTPS unless loopback) and `DUVORA_NETRA_API_KEY` to connect a [Netra](https://github.com/zyvorai/zyvor-netra) controller; `DUVORA_NETRA_CA_FILE` pins a self-signed certificate. Devices map to Netra nodes by `DUVORA_NETRA_NODE_MAP` (JSON of device id or host to node), by host name, or, with `DUVORA_NETRA_DISCOVER=1`, as new `netra-<node>` devices. `DUVORA_NETRA_INTERVAL` (default 15 s) sets the polling period.
 
 Node isolation needs a Netra admin key and a Netra build with `/api/v1/ebpf/node-isolation`. Enforcement is off unless `DUVORA_NETRA_ENFORCE=1`; enforce leases last `DUVORA_NETRA_LEASE` seconds (default 900) and are renewed while Duvora runs. Engage the kill switch (console **Operate → Isolation**, or `duvoractl kill-switch on`) to send every node back to shadow. Details: [EBPF.md](EBPF.md).
 
@@ -139,7 +178,7 @@ Rollback restores eligible simulated desired state and preserves monotonic devic
 
 ## Observability
 
-`/healthz` is public liveness. `/api/v1/metrics` (viewer) reports device/source counts, job count, and `duvora_open_incidents`. Alert rules raise incidents for high temperature, packet drops, degraded health, stale observations, and failed jobs; incidents resolve automatically when the condition clears. Hardware observations older than 120 seconds are stale.
+`/healthz` is public liveness. `/api/v1/metrics` (viewer) reports device/source counts, job count, `duvora_open_incidents`, `duvora_steering_devices{stage}`, `duvora_steering_bypass`, `duvora_siem_queued` and `duvora_siem_dropped`. Alert rules raise incidents for high temperature, packet drops, degraded health, stale observations, and failed jobs; incidents resolve automatically when the condition clears. Hardware observations older than 120 seconds are stale.
 
 ## Evaluation limits
 

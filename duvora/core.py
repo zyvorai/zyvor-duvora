@@ -17,14 +17,29 @@ from .common import Problem, canonical, finite, name
 from .ebpf import STAGES, EbpfMixin, replay
 from .netra import FLOW_WINDOW
 from .history import SAMPLE_RETENTION, HistoryMixin
+from .insights import InsightsMixin
+from .copilot import CopilotMixin
+from .llm import AiMixin
 from .reports import ReportsMixin
+from .aiassets import AiAssetsMixin
+from .aiprotect import AiProtectMixin
+from .budget import BudgetMixin, budget_blockers, validate_resources
+from .identity import IdentityMixin
+from .intel import IntelMixin
+from .playbooks import RUN_RETENTION, PlaybooksMixin
+from .scanner import ScannerMixin
+from .siem import SiemMixin
+from .steering import SteeringMixin
 
 __all__ = ["Problem", "Store", "canonical", "finite", "name"]
 PLAN_GRACE = 3600
 HOUSEKEEPING_INTERVAL = 60
+ACTIONS = {"isolate": {"policy", "stage"}, "release": set(), "deploy": {"service", "image", "resources"}, "upgrade": {"firmware"},
+           "steer": {"ruleset", "stage"}, "unsteer": set()}
 
 
-class Store(AuthMixin, HistoryMixin, AlertsMixin, ReportsMixin, EbpfMixin):
+class Store(AuthMixin, HistoryMixin, AlertsMixin, ReportsMixin, EbpfMixin, InsightsMixin, AiMixin, CopilotMixin, SteeringMixin,
+            AiProtectMixin, AiAssetsMixin, BudgetMixin, ScannerMixin, IntelMixin, PlaybooksMixin, IdentityMixin, SiemMixin):
     def __init__(self, path, demo=False):
         self.lock = threading.RLock()
         self.db = sqlite3.connect(path, check_same_thread=False, isolation_level=None)
@@ -41,10 +56,20 @@ class Store(AuthMixin, HistoryMixin, AlertsMixin, ReportsMixin, EbpfMixin):
         """)
         self.demo = demo
         self.last_housekeeping = 0.0
+        self.init_siem()
         self.init_auth()
         self.init_history()
         self.init_alerts()
         self.init_ebpf()
+        self.init_insights()
+        self.init_ai()
+        self.init_steering()
+        self.init_aiprotect()
+        self.init_aiassets()
+        self.init_scanner()
+        self.init_intel()
+        self.init_playbooks()
+        self.init_identity()
         if demo:
             self.seed()
 
@@ -65,6 +90,7 @@ class Store(AuthMixin, HistoryMixin, AlertsMixin, ReportsMixin, EbpfMixin):
     def event(self, actor, action, detail):
         row = {"time": time.time(), "actor": actor, "action": action, "detail": detail}
         self.db.execute("INSERT INTO audit(body) VALUES(?)", (canonical(row),))
+        self.export_event("audit", row)
 
     def put(self, table, ident, body):
         assert table in {"devices", "jobs", "policies"}
@@ -94,10 +120,13 @@ class Store(AuthMixin, HistoryMixin, AlertsMixin, ReportsMixin, EbpfMixin):
                     "id": ident, "model": "BlueField-3 (simulated)", "host": host, "site": site,
                     "source": "simulator", "health": health, "last_seen": time.time(),
                     "version": 1, "firmware": "demo-1.0", "mode": "observe", "services": [],
-                    "policy_ids": [], "metrics": {"throughput_gbps": 62 + i * 18, "drops": 14 if i == 3 else 0,
+                    "policy_ids": [],                     "metrics": {"throughput_gbps": 62 + i * 18, "drops": 14 if i == 3 else 0,
                     "temperature_c": 76 if i == 3 else 43 + i, "link_gbps": 200},
-                    "capabilities": ["simulation"], "interfaces": ["p0", "p1"]
+                    "capabilities": ["simulation"], "interfaces": ["p0", "p1"],
+                    "capacity": {"arm_cores": 16, "memory_gb": 32, "storage_gb": 120},
+                    "reserved": {"arm_cores": 2, "memory_gb": 4, "storage_gb": 10}
                 })
+            self.seed_steering(["bf3-01", "bf3-02"])
             self.event("system", "demo.seed", "Four simulated devices; no physical hardware is controlled")
 
     def snapshot(self):
@@ -115,6 +144,10 @@ class Store(AuthMixin, HistoryMixin, AlertsMixin, ReportsMixin, EbpfMixin):
                     "linux_discovery": "read-only", "dpf_import": "read-only",
                     "ebpf_telemetry": "native" if native else ("connected" if self.netra["connected"] else "disconnected") if self.netra["configured"] else "unavailable",
                     "hardware_enforcement": ("native-gated" if native else "netra-gated") if self.netra["enforce_allowed"] and (native or self.netra["isolation_supported"]) else "unavailable",
+                    "traffic_steering": "native-gated" if any((d.get("ebpf") or {}).get("steer_available") for d in devices) else "simulation" if self.demo else "unavailable",
+                    "ai_inspection": "available",
+                    "siem_export": "configured" if self.siem else "off",
+                    "dpu_offload": "unavailable",
                     "firmware_flash": "unavailable",
                     "storage_offload": "unavailable"}}
 
@@ -174,10 +207,9 @@ class Store(AuthMixin, HistoryMixin, AlertsMixin, ReportsMixin, EbpfMixin):
         if not isinstance(spec, dict):
             raise Problem("Plan specification must be an object")
         action = spec.get("action")
-        fields = {"isolate": {"policy", "stage"}, "release": set(), "deploy": {"service", "image"}, "upgrade": {"firmware"}}
-        if action not in fields:
-            raise Problem("Action must be isolate, release, deploy or upgrade")
-        if set(spec) - ({"action", "devices"} | fields[action]):
+        if action not in ACTIONS:
+            raise Problem("Action must be isolate, release, deploy, upgrade, steer or unsteer")
+        if set(spec) - ({"action", "devices"} | ACTIONS[action]):
             raise Problem("Unknown plan fields")
         targets = spec.get("devices")
         if not isinstance(targets, list) or not 1 <= len(targets) <= 100 or len(set(map(str, targets))) != len(targets):
@@ -190,6 +222,12 @@ class Store(AuthMixin, HistoryMixin, AlertsMixin, ReportsMixin, EbpfMixin):
             image = spec.get("image", "")
             if not isinstance(image, str) or not re.fullmatch(r"[a-z0-9][a-z0-9./:_-]{0,200}@sha256:[a-f0-9]{64}", image):
                 raise Problem("Service image must be pinned to a sha256 digest")
+            if "resources" in spec:
+                spec["resources"] = validate_resources(spec["resources"])
+        if action == "steer":
+            name(spec.get("ruleset"), "rule set id")
+            if spec.setdefault("stage", "shadow") not in STAGES:
+                raise Problem("Stage must be shadow or enforce")
         if action == "upgrade":
             name(spec.get("firmware"), "firmware")
         if action == "isolate":
@@ -210,17 +248,26 @@ class Store(AuthMixin, HistoryMixin, AlertsMixin, ReportsMixin, EbpfMixin):
                 raise Problem("Stage must be shadow or enforce")
         return spec
 
-    def fingerprint(self, ids, netra=False):
-        # Agent reports bump versions constantly; a Netra plan only goes stale when its isolation changes.
-        state = (lambda d: [d.get("netra_isolation"), d.get("ebpf", {}).get("node")]) if netra else (lambda d: d["version"])
+    def fingerprint(self, ids, kind="version"):
+        # Agent reports bump versions constantly; eBPF plans only go stale when the isolation or steering they change does.
+        kind = {True: "netra", False: "version"}.get(kind, kind)
+        state = {"netra": lambda d: [d.get("netra_isolation"), d.get("ebpf", {}).get("node")],
+                 "steer": self.steer_fingerprint_state, "version": lambda d: d["version"]}[kind]
         return hashlib.sha256(canonical([(x, state(self.device(x))) for x in sorted(ids)]).encode()).hexdigest()
+
+    @staticmethod
+    def fingerprint_kind(p):
+        return "steer" if p.get("job_mode") == "steer-native" else "netra" if p.get("netra") else "version"
 
     def plan(self, actor, spec):
         spec = self.validate_spec(spec)
         with self.transaction():
             devices = [self.device(x) for x in spec["devices"]]
-            netra = [d for d in devices if self.netra_node(d)]
-            if netra:
+            netra = [d for d in devices if self.netra_node(d)] if spec["action"] not in ("steer", "unsteer") else []
+            extra, job_mode = {}, None
+            if spec["action"] in ("steer", "unsteer"):
+                mode, confirmation, effects, blockers, extra, job_mode = self.steer_plan(spec, devices)
+            elif netra:
                 mode, confirmation, effects, blockers = self.netra_plan(spec, devices)
                 if len(netra) != len(devices):
                     blockers.append("Do not mix Netra-backed devices with other devices in one plan")
@@ -233,23 +280,30 @@ class Store(AuthMixin, HistoryMixin, AlertsMixin, ReportsMixin, EbpfMixin):
                         blockers.append(f"{d['id']}: device health is unknown")
                 if spec.get("stage") == "enforce":
                     blockers.append("Enforcement needs Netra-backed devices; simulated isolation has no stages")
+                if spec["action"] == "deploy":
+                    blockers += self.image_scan_blockers(spec["image"])
+                    for d in devices:
+                        blockers += budget_blockers(d, spec["service"], spec.get("resources"))
                 mode = "simulation" if all(d["source"] == "simulator" for d in devices) else "hardware-read-only"
                 confirmation = "APPLY SIMULATION"
                 effects = {"isolate": "Simulate an allow-list policy; default deny within this model only",
                            "release": "Remove all simulated isolation policies from selected devices",
                            "deploy": "Record a simulated running service; no container is launched",
-                           "upgrade": "Simulate drain → update → verify; no firmware is flashed"}[spec["action"]]
+                           "upgrade": "Simulate drain → update → verify; no firmware is flashed; steering bypasses during the upgrade"}[spec["action"]]
             p = {"id": secrets.token_urlsafe(24), "spec": spec, "expires": time.time() + 300, "mode": mode,
                 "confirmation": confirmation, "netra": bool(netra),
                 "blockers": blockers, "targets": [{"id": d["id"], "host": d["host"], "version": d["version"]} for d in devices],
-                "effects": effects}
+                "effects": effects, **extra}
+            if job_mode:
+                p["job_mode"] = job_mode
             if spec["action"] == "isolate":
                 shadow = {d["id"]: {**replay(self.netra_flows[d["id"]], spec["policy"]["cidr"], spec["policy"]["ports"]),
                                     "source": "replayed from Netra flow log", "window": FLOW_WINDOW}
                           for d in devices if d["id"] in self.netra_flows}
                 if shadow:
                     p["shadow"] = shadow
-            self.db.execute("INSERT INTO plans(id,actor,body,fingerprint,expires) VALUES(?,?,?,?,?)", (p["id"], actor, canonical(p), self.fingerprint(spec["devices"], p["netra"]), p["expires"]))
+            self.db.execute("INSERT INTO plans(id,actor,body,fingerprint,expires) VALUES(?,?,?,?,?)",
+                            (p["id"], actor, canonical(p), self.fingerprint(spec["devices"], self.fingerprint_kind(p)), p["expires"]))
             self.event(actor, "plan.created", {"id": p["id"], "action": spec["action"], "devices": spec["devices"], "mode": p["mode"]})
             return p
 
@@ -258,7 +312,8 @@ class Store(AuthMixin, HistoryMixin, AlertsMixin, ReportsMixin, EbpfMixin):
             row = self.db.execute("SELECT * FROM plans WHERE id=?", (ident,)).fetchone()
             if not row:
                 raise Problem("Plan not found", 404)
-            if row["actor"] != actor:
+            # Playbook drafts belong to no person; any administrator may review and apply them.
+            if row["actor"] != actor and not row["actor"].startswith("playbook:"):
                 raise Problem("Plan belongs to another principal", 403)
             if row["job"]:
                 return json.loads(self.db.execute("SELECT body FROM jobs WHERE id=?", (row["job"],)).fetchone()[0])
@@ -266,7 +321,13 @@ class Store(AuthMixin, HistoryMixin, AlertsMixin, ReportsMixin, EbpfMixin):
             expected = p.get("confirmation", "APPLY SIMULATION")
             if confirmation != expected:
                 raise Problem(f"Explicit confirmation must be {expected}")
-            if p.get("netra"):
+            if p.get("job_mode") == "steer-native":
+                if p["spec"].get("stage") == "enforce" and p["spec"]["action"] == "steer":
+                    if not self.netra.get("enforce_allowed"):
+                        raise Problem("Enforcement is disabled on this server", 409)
+                    if self.killed():
+                        raise Problem("The kill switch is engaged", 409)
+            elif p.get("netra"):
                 if p["spec"].get("stage") == "enforce" and p["spec"]["action"] == "isolate":
                     if not self.netra.get("enforce_allowed"):
                         raise Problem("Enforcement is disabled on this server", 409)
@@ -280,12 +341,15 @@ class Store(AuthMixin, HistoryMixin, AlertsMixin, ReportsMixin, EbpfMixin):
                 raise Problem("Plan expired; create a fresh preview", 409)
             if p["blockers"]:
                 raise Problem("Plan blocked: " + "; ".join(p["blockers"]), 409)
-            if self.fingerprint(p["spec"]["devices"], p.get("netra", False)) != row["fingerprint"]:
+            if self.fingerprint(p["spec"]["devices"], self.fingerprint_kind(p)) != row["fingerprint"]:
                 raise Problem("Device state changed; create a fresh preview", 409)
             job = {"id": secrets.token_hex(12), "plan_id": ident, "state": "queued", "step": 0,
-                "mode": "netra" if p.get("netra") else "simulation", "action": p["spec"]["action"], "spec": p["spec"], "created": time.time(),
+                "mode": p.get("job_mode") or ("netra" if p.get("netra") else "simulation"), "action": p["spec"]["action"], "spec": p["spec"], "created": time.time(),
                 "actor": actor, "before": [self.device(x) for x in p["spec"]["devices"]],
                 "policies_before": [x for x in self.rows("policies") if set(x["devices"]) & set(p["spec"]["devices"])], "events": []}
+            if p["spec"]["action"] in ("steer", "unsteer"):
+                job["steering"] = p.get("steering")
+                job["steering_before"] = {x: self.applied_rules(x) for x in p["spec"]["devices"] if self.applied_rules(x)}
             # Prevent competing plans from starting against the same device.
             for active in self.rows("jobs"):
                 if active["state"] in {"queued", "running"} and set(active["spec"]["devices"]) & set(job["spec"]["devices"]):
@@ -293,7 +357,7 @@ class Store(AuthMixin, HistoryMixin, AlertsMixin, ReportsMixin, EbpfMixin):
             self.put("jobs", job["id"], job)
             self.db.execute("UPDATE plans SET job=? WHERE id=?", (job["id"], ident))
             self.event(actor, "job.queued", {"id": job["id"], "action": job["action"], "mode": job["mode"]})
-            if job["mode"] == "netra":
+            if job["mode"] in ("netra", "steer-native"):
                 self.netra_wake.set()
             return job
 
@@ -307,6 +371,15 @@ class Store(AuthMixin, HistoryMixin, AlertsMixin, ReportsMixin, EbpfMixin):
                 job["state"] = "running"
                 steps = ["preflight", "drain", "update", "verify"] if job["action"] == "upgrade" else ["preflight", "reconcile", "verify"]
                 job["events"].append({"time": time.time(), "step": steps[job["step"]], "message": "Simulator completed this step"})
+                if job["action"] == "upgrade" and steps[job["step"]] == "drain":
+                    # Like a DPU firewall upgrade: steering bypasses while the device is drained. No version bump, so rollback still applies.
+                    for ident in job["spec"]["devices"]:
+                        d = self.device(ident)
+                        s = d.get("steering")
+                        if s and not (s.get("bypass") or {}).get("engaged"):
+                            s["bypass"] = {"engaged": True, "reason": "upgrade", "since": time.time(), "by": "reconciler", "job": job["id"]}
+                            self.put("devices", ident, d)
+                            self.event("reconciler", "steering.bypass-engaged", {"device": ident, "reason": "upgrade", "job": job["id"]})
                 job["step"] += 1
                 if job["step"] == len(steps):
                     spec = job["spec"]
@@ -331,9 +404,18 @@ class Store(AuthMixin, HistoryMixin, AlertsMixin, ReportsMixin, EbpfMixin):
                             d["policy_ids"] = []
                             d["mode"] = "observe"
                         elif job["action"] == "deploy":
-                            d["services"] = [x for x in d["services"] if x["name"] != spec["service"]] + [{"name": spec["service"], "image": spec["image"], "state": "simulated-running"}]
+                            service = {"name": spec["service"], "image": spec["image"], "state": "simulated-running"}
+                            if spec.get("resources"):
+                                service["resources"] = spec["resources"]
+                            d["services"] = [x for x in d["services"] if x["name"] != spec["service"]] + [service]
+                        elif job["action"] in ("steer", "unsteer"):
+                            self.steer_sim_complete(d, job)
                         else:
                             d["firmware"] = spec["firmware"]
+                            b = (d.get("steering") or {}).get("bypass") or {}
+                            if b.get("engaged") and b.get("reason") == "upgrade":
+                                d["steering"]["bypass"] = {"engaged": False}
+                                self.event("reconciler", "steering.bypass-released", {"device": ident, "reason": "upgrade complete", "job": job["id"]})
                         d["version"] += 1
                         self.put("devices", ident, d)
                     job["state"] = "succeeded"
@@ -352,6 +434,8 @@ class Store(AuthMixin, HistoryMixin, AlertsMixin, ReportsMixin, EbpfMixin):
                 raise Problem("Only succeeded jobs can be rolled back", 409)
         if job.get("mode") == "netra":
             return self.netra_rollback(actor, job)
+        if job.get("mode") == "steer-native" or job["action"] in ("steer", "unsteer"):
+            return self.steer_rollback(actor, job)
         with self.transaction():
             for d in job["before"]:
                 current = self.device(d["id"])
@@ -398,9 +482,19 @@ class Store(AuthMixin, HistoryMixin, AlertsMixin, ReportsMixin, EbpfMixin):
         """Background work besides reconciliation: demo sampling, alert evaluation, retention."""
         now = now or time.time()
         self.simulate_metrics(now)
+        self.simulate_steering(now)
         self.evaluate_alerts(now)
+        self.persist_destinations(now)
+        self.maybe_refresh_intel(now)
+        self.flush_siem()
         if now - self.last_housekeeping >= HOUSEKEEPING_INTERVAL:
+            self.simulate_assets(now)
             self.housekeeping(now)
+
+    def extra_conditions(self):
+        """Alert rule kinds implemented outside alerts.py: {kind: fn(rule, now, firing)}."""
+        return {**self.steering_conditions(), **self.aiprotect_conditions(), **self.aiassets_conditions(),
+                **self.intel_conditions(), **self.scanner_conditions(), **self.identity_conditions()}
 
     def housekeeping(self, now=None):
         now = now or time.time()
@@ -413,6 +507,11 @@ class Store(AuthMixin, HistoryMixin, AlertsMixin, ReportsMixin, EbpfMixin):
                 "samples": self.db.execute("DELETE FROM samples WHERE ts<?", (now - SAMPLE_RETENTION,)).rowcount,
                 "incidents": self.db.execute("DELETE FROM incidents WHERE state='resolved' AND opened<?", (now - RESOLVED_RETENTION,)).rowcount,
                 "sessions": self.db.execute("DELETE FROM sessions WHERE expires<?", (now,)).rowcount,
+                "verdicts": self.prune_verdicts(now),
+                "ai": self.prune_ai(now) + self.prune_assets(now),
+                "agent_tokens": self.prune_identity(now),
+                "playbook_runs": self.db.execute("DELETE FROM playbook_runs WHERE created<?", (now - RUN_RETENTION,)).rowcount,
+                "playbook_rule_sets": self.prune_playbook_sets(now),
             }
             if any(removed.values()):
                 self.event("system", "housekeeping", removed)

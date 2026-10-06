@@ -64,7 +64,7 @@ class KernelLoadTests(unittest.TestCase):
 
     def test_every_object_loads(self):
         objects = sorted(OBJ_DIR.glob("duvora_*.o"))
-        self.assertEqual([o.name for o in objects], ["duvora_drops.o", "duvora_iface.o", "duvora_nodeiso.o", "duvora_tcp.o"])
+        self.assertEqual([o.name for o in objects], ["duvora_drops.o", "duvora_iface.o", "duvora_nodeiso.o", "duvora_steer.o", "duvora_tcp.o"])
         for path in objects:
             obj = self.bpf.open(path)
             obj.close()

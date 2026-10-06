@@ -59,7 +59,13 @@ class Application:
         r("GET", "/alert-rules", "viewer", lambda c: self.store.alert_rules())
         r("PUT", "/alert-rules/{id}", "admin", lambda c: self.store.update_rule(c.actor, c.args["id"], c.body))
         r("GET", "/scorecard", "viewer", lambda c: self.store.scorecard())
-        r("GET", "/report", "viewer", lambda c: self.store.briefing())
+        r("GET", "/report", "viewer", lambda c: self.store.briefing(ai=c.query.get("ai") == "1"))
+        r("GET", "/ai", "viewer", lambda c: self.store.ai_status())
+        r("GET", "/insights", "viewer", lambda c: self.store.insights())
+        r("GET", "/devices/{id}/forecast", "viewer", lambda c: self.store.forecast(c.args["id"]))
+        r("GET", "/devices/{id}/allowlist-suggestions", "viewer", lambda c: self.store.suggest_allowlist(c.args["id"]))
+        r("GET", "/incidents/{id}/explain", "viewer", lambda c: self.store.explain_incident(c.args["id"], c.query.get("llm") != "0"))
+        r("POST", "/copilot", "viewer", lambda c: self.store.copilot(c.actor, c.role, c.body))
         r("GET", "/report.md", "viewer", lambda c: Raw(self.store.briefing()["markdown"], "text/markdown; charset=utf-8", "duvora-briefing.md"))
         r("GET", "/topology", "viewer", lambda c: self.store.topology())
         r("POST", "/plans", "admin", lambda c: self.store.plan(c.actor, c.body))
@@ -75,16 +81,62 @@ class Application:
         r("POST", "/tokens", "user", lambda c: self.store.create_token(c.actor, c.body))
         r("DELETE", "/tokens/{id}", "user", lambda c: self.store.revoke_token(c.actor, c.args["id"]))
         r("GET", "/backup", "admin", lambda c: Raw(self.store.backup(c.actor), "application/vnd.sqlite3", "duvora-backup.db"))
+        # Traffic steering (host-kernel eBPF or simulation) and bypass.
+        r("GET", "/agent/steering", "agent-only", lambda c: self.store.agent_steering(c.actor))
+        r("POST", "/agent/token", "agent-only", lambda c: self.store.mint_agent_token(c.actor, c.via))
+        r("GET", "/steering", "viewer", lambda c: self.store.steering_overview())
+        r("GET", "/steering/sets/{id}", "viewer", lambda c: self.store.steering_set(c.args["id"]))
+        r("PUT", "/steering/sets/{id}", "admin", lambda c: self.store.put_steering_set(c.actor, c.args["id"], c.body))
+        r("DELETE", "/steering/sets/{id}", "admin", lambda c: self.store.delete_steering_set(c.actor, c.args["id"]))
+        r("POST", "/steering/evaluate", "viewer", lambda c: self.store.evaluate_steering(c.body))
+        r("POST", "/steering/explain", "viewer", lambda c: self.store.explain_verdict(c.body, c.query.get("llm") != "0"))
+        r("GET", "/devices/{id}/steering", "viewer", lambda c: self.store.device_steering(c.args["id"]))
+        r("POST", "/devices/{id}/steering/bypass", "admin", lambda c: self.store.set_bypass(
+            c.actor, c.args["id"], c.body.get("engaged"), c.body.get("confirmation"), str(c.body.get("reason") or "manual")[:100]))
+        r("GET", "/devices/{id}/steering-suggestions", "viewer", lambda c: self.store.suggest_steering(c.args["id"]))
+        r("GET", "/verdicts", "viewer", lambda c: self.store.verdicts(c.query.get("device"), c.query.get("action"), c.query.get("rule"), c.query.get("limit", 200)))
+        r("GET", "/devices/{id}/budget", "viewer", lambda c: self.store.budget(c.args["id"]))
+        # AI protection, discovery, scanning, threat intel, playbooks, SIEM, agent identity.
+        r("GET", "/ai-traffic", "viewer", lambda c: self.store.ai_traffic())
+        r("GET", "/ai/findings", "viewer", lambda c: self.store.ai_findings(c.query.get("device"), c.query.get("kind"), None, c.query.get("limit", 200)))
+        r("GET", "/ai/assets", "viewer", lambda c: self.store.ai_assets())
+        r("GET", "/ai/posture", "viewer", lambda c: self.store.ai_posture())
+        r("POST", "/ai/sanctioned", "admin", lambda c: self.store.add_sanctioned(c.actor, c.body))
+        r("DELETE", "/ai/sanctioned/{id}", "admin", lambda c: self.store.delete_sanctioned(c.actor, c.args["id"]))
+        r("GET", "/scans", "viewer", lambda c: self.store.scans(c.query.get("target")))
+        r("POST", "/scans", "admin", lambda c: self.store.start_scan(c.actor, c.body))
+        r("GET", "/scans/{id}", "viewer", lambda c: self.store.scan(c.args["id"]))
+        r("GET", "/intel", "viewer", lambda c: self.store.intel_overview())
+        r("PUT", "/intel/feeds/{id}", "admin", lambda c: self.store.put_feed(c.actor, c.args["id"], c.body))
+        r("DELETE", "/intel/feeds/{id}", "admin", lambda c: self.store.delete_feed(c.actor, c.args["id"]))
+        r("POST", "/intel/refresh", "admin", lambda c: self.store.refresh_feeds(only=c.body.get("feed")))
+        r("POST", "/intel/ruleset", "admin", lambda c: self.store.intel_ruleset(c.actor, c.body))
+        r("GET", "/playbooks", "viewer", lambda c: self.store.playbooks())
+        r("PUT", "/playbooks/{id}", "admin", lambda c: self.store.put_playbook(c.actor, c.args["id"], c.body))
+        r("DELETE", "/playbooks/{id}", "admin", lambda c: self.store.delete_playbook(c.actor, c.args["id"]))
+        r("POST", "/playbooks/{id}/run", "admin", lambda c: self.store.run_playbook_manual(c.actor, c.args["id"], c.body))
+        r("GET", "/playbook-runs", "viewer", lambda c: self.store.playbook_runs(c.query.get("incident"), c.query.get("limit", 100)))
+        r("GET", "/siem", "admin", lambda c: self.store.siem_status())
+        r("POST", "/siem/test", "admin", lambda c: self.store.siem_test(c.actor))
+        r("GET", "/agent-identities", "admin", lambda c: self.store.agent_identities())
+        store.agent_key_hosts = {a.split(":", 1)[1] for a in keys if a.startswith("agent:")}
 
     def route(self, method, pattern, access, fn):
         regex = re.compile("^/api/v1" + re.sub(r"\{(\w+)\}", r"(?P<\1>[A-Za-z0-9._-]{1,128})", re.escape(pattern).replace(r"\{", "{").replace(r"\}", "}")) + "$")
         self.routes.append((method, regex, access, fn))
 
-    def resolve(self, token):
-        """Resolve a bearer: configured access keys first, then personal user tokens."""
+    def resolve(self, token, client=None):
+        """Resolve a bearer: configured access keys, then short-lived agent tokens, then personal user tokens."""
         for actor, (role, secret) in self.keys.items():
             if hmac.compare_digest(token.encode(), secret.encode()):
                 return actor, role, "key"
+        if token.startswith("dva_"):
+            host = self.store.agent_token_user(token)
+            if host:
+                return f"agent:{host}", "agent", "agent-token"
+            if client:
+                self.store.note_unknown_agent(client)
+            raise Problem("Agent token is unknown or expired", 401)
         user = self.store.token_user(token) if token else None
         if user:
             return user["username"], user["role"], "token"
@@ -93,9 +145,9 @@ class Application:
     def identity(self, token):
         return self.resolve(token)[:2]
 
-    def authenticate(self, bearer, session):
+    def authenticate(self, bearer, session, client=None):
         if bearer:
-            return self.resolve(bearer)
+            return self.resolve(bearer, client)
         user = self.store.session_user(session)
         if user:
             return user["username"], user["role"], "session"
@@ -113,7 +165,17 @@ class Application:
         for source in ("simulator", "linux-pci", "nvidia-dpf", "netra-ebpf", "duvora-ebpf"):
             lines.append(f'duvora_devices{{source="{source}"}} {sum(d["source"] == source for d in snapshot["devices"])}')
         lines += ["# TYPE duvora_jobs gauge", f'duvora_jobs {len(snapshot["jobs"])}',
-                  "# TYPE duvora_open_incidents gauge", f'duvora_open_incidents {snapshot["open_incidents"]}']
+                  "# TYPE duvora_open_incidents gauge", f'duvora_open_incidents {snapshot["open_incidents"]}',
+                  "# HELP duvora_anomalies Metrics currently deviating from their learned baseline", "# TYPE duvora_anomalies gauge",
+                  f'duvora_anomalies {len(self.store.anomalies())}']
+        steering = [d.get("steering") or {} for d in snapshot["devices"]]
+        lines += ["# HELP duvora_steering_devices Devices with steering by stage", "# TYPE duvora_steering_devices gauge"]
+        for stage in ("shadow", "enforce"):
+            lines.append(f'duvora_steering_devices{{stage="{stage}"}} {sum(s.get("stage") == stage for s in steering)}')
+        lines += ["# TYPE duvora_steering_bypass gauge", f'duvora_steering_bypass {sum(bool((s.get("bypass") or {}).get("engaged")) for s in steering)}']
+        siem = self.store.siem_status()
+        lines += ["# HELP duvora_siem_dropped Events dropped because the SIEM queue was full", "# TYPE duvora_siem_dropped counter",
+                  f'duvora_siem_dropped {siem.get("dropped", 0)}', "# TYPE duvora_siem_queued gauge", f'duvora_siem_queued {siem.get("queued", 0)}']
         return "\n".join(lines) + "\n"
 
     def dispatch(self, method, path, actor, role, body=None, query=None, via="key"):
@@ -221,6 +283,16 @@ def handler(app, tls=False):
                 return ""
             return jar[SESSION_COOKIE].value if SESSION_COOKIE in jar else ""
 
+        def cert_names(self):
+            """DNS names and common name from a verified client certificate, if any."""
+            getpeercert = getattr(self.connection, "getpeercert", None)
+            cert = getpeercert() if getpeercert else None
+            if not cert:
+                return set()
+            names = {v for k, v in cert.get("subjectAltName", ()) if k == "DNS"}
+            names |= {v for rdn in cert.get("subject", ()) for k, v in rdn if k == "commonName"}
+            return names
+
         def read_body(self, method):
             if method not in {"POST", "PUT", "PATCH"}:
                 return None
@@ -266,7 +338,9 @@ def handler(app, tls=False):
                         app.store.logout(self.cookie_session())
                     return self.send(200, {"ok": True}, cookie=self.session_cookie("", 0))
                 auth = self.headers.get("Authorization", "")
-                actor, role, via = app.authenticate(auth[7:] if auth.startswith("Bearer ") else "", self.cookie_session())
+                actor, role, via = app.authenticate(auth[7:] if auth.startswith("Bearer ") else "", self.cookie_session(), self.client_address[0])
+                if role == "agent":
+                    app.store.check_agent_identity(actor, via, self.cert_names(), path)
                 query = {k: v[0] for k, v in parse_qs(parts.query).items()}
                 result = app.dispatch(method, path, actor, role, body, query, via)
                 if isinstance(result, Raw):
@@ -352,7 +426,12 @@ def main():
         netra = NetraClient.from_env()
     except ValueError as exc:
         parser.error(str(exc))
-    store = Store(args.db, args.demo)
+    try:
+        store = Store(args.db, args.demo)
+    except ValueError as exc:
+        parser.error(str(exc))
+    if store.mtls_mode != "off" and not (args.tls_cert and os.environ.get("DUVORA_AGENT_CA")):
+        parser.error("DUVORA_AGENT_MTLS needs --tls-cert/--tls-key and DUVORA_AGENT_CA")
     if netra:
         store.configure_netra(netra.url, os.environ.get("DUVORA_NETRA_ENFORCE") == "1", netra)
     app = Application(store, keys)
@@ -361,6 +440,10 @@ def main():
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.minimum_version = ssl.TLSVersion.TLSv1_2
         context.load_cert_chain(args.tls_cert, args.tls_key)
+        if os.environ.get("DUVORA_AGENT_CA"):
+            # Optional at the TLS layer so browsers still connect; agents are checked per request (DUVORA_AGENT_MTLS).
+            context.load_verify_locations(os.environ["DUVORA_AGENT_CA"])
+            context.verify_mode = ssl.CERT_OPTIONAL
         httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
     stop = threading.Event()
 

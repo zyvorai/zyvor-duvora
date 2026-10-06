@@ -1,5 +1,40 @@
 # Changelog
 
+## Unreleased
+
+- Traffic steering ([docs/STEERING.md](docs/STEERING.md)): ordered 5-tuple rule sets (bypass, allow, inspect, drop; up to 1,000 rules; default bypass or drop), `steer` and `unsteer` plans with flow-replay previews, shadow before leased enforce, kill switch, rollback to the previous rule set in shadow. Runs in the host kernel through the new `duvora_steer` TCX program (generation-swapped rules, per-rule counters, flow samples, 256-byte payload capture for `inspect`) or in simulation. Not DPU offload.
+- Bypass: manual with `BYPASS <device>` / `RESUME <device>`, automatic during upgrades; `steering-bypass`, `steering-drop` and `steering-would-drop` alerts; verdict history (`/api/v1/verdicts`).
+- AI security ([docs/AI.md](docs/AI.md)):
+  - LLM traffic inspection: endpoint and provider, prompt injection, secrets and personal data, with masked snippets. Alerts: `llm-prompt-injection`, `llm-secret-leak`, `llm-sensitive-data`, `llm-new-endpoint`.
+  - AI asset discovery from `/proc` on agent nodes, with a sanctioned list and the `unsanctioned-ai` alert.
+  - Image and model artifact scanning with deploy blockers (`DUVORA_REQUIRE_SCAN`) and the `scan-failed` alert; `duvoractl scan --file` works offline.
+  - Threat-intel feeds (plain, CSV, STIX 2) matched against flows, the `intel-match` alert, and intel rule sets.
+  - Draft-only playbooks (`llm-threat`, `intel-match`, `steering-drops`).
+  - AI posture score in the scorecard, report and briefing.
+- Resource budgets: device capacity and platform reservations; deploy plans with `resources` are blocked when they do not fit. The Services page gains a headroom panel.
+- Agent identity: rotating short-lived `dva_` tokens (`/api/v1/agent/token`), optional mTLS (`DUVORA_AGENT_MTLS`, `DUVORA_AGENT_CA`), and the `agent-identity-stale` and `agent-identity-unknown` alerts.
+- SIEM export of audit events, verdicts, AI findings, intel matches and playbook runs, over a webhook and/or syslog, with a bounded queue.
+- Console: Steering, AI traffic, Threats, Playbooks, and Agents & SIEM pages; steer and unsteer in the plan dialog; deploy resources; AI posture on the Report.
+- Copilot tools: `steering_state`, `list_verdicts`, `explain_verdict`, `suggest_steering`, `ai_traffic`, `ai_assets`, `scan_results`, `intel_matches`, `posture`; `draft_plan` covers steer and unsteer.
+- CLI: `steering`, `steer`, `unsteer`, `bypass`, `verdicts`, `flow`, `steer-suggest`, `budget`, `ai-traffic`, `ai-findings`, `assets`, `scan`, `intel`, `playbooks`, `siem`, `agents`.
+- Helm: `agent.steering`, `agent.aiDiscovery`, `agent.tokenRotation`, `siem.*`, `agentIdentity.*`, `scan.*`, `intel.*`, `notify.*`, `integrationsSecret`. `deploy-remote.sh` passes the SIEM, notify and require-scan variables, and when the agent rollout stalls it re-imports an image that kubelet garbage collection removed, then retries once.
+- Fix: the steering exemption for the control plane is per address and port, so a control plane on the agent's own host no longer exempts the host's other traffic.
+- Validated live on Linux 7.0 (k3s, existing TCX programs on the uplink): a shadow steer plan applied by the agent, would-drop and inspect verdicts, a prompt injection detected in real traffic with incidents opened, the enforce gate, bypass and resume, and token rotation.
+
+## 0.5.0
+
+- AI features, two layers ([docs/AI.md](docs/AI.md)). Local analytics need no configuration and make no external calls:
+  - Anomaly detection: EWMA baselines per device and metric (pps, drops, TCP retransmits and resets, throughput, temperature), alert rule `anomaly` with a z-score threshold, warm-up and a three-sample streak.
+  - New egress destinations from native or Netra flow records, alert rule `new-destination`.
+  - Forecasts: linear fits of temperature and throughput against their thresholds, alert rule `forecast-breach` (hours), shown only when R² ≥ 0.5.
+  - Allow-list suggestions: single CIDR plus ports candidates ranked by replayed coverage of observed egress; a picker in the plan dialog.
+  - Incident evidence with rule-based hypotheses (isolation blocking, allow-list gaps, closed ports, congestion, path loss, agent restarts, thermal, failed jobs).
+- Optional language model over any OpenAI-compatible API (`DUVORA_AI_URL`, `DUVORA_AI_MODEL`, `DUVORA_AI_KEY`, `DUVORA_AI_REDACT`): written incident explanations, an AI briefing summary (`/report?ai=1`), and an ops copilot (`POST /api/v1/copilot`) with read-only tools and an admin-only `draft_plan` that creates a preview but never applies. Telemetry is passed as delimited data, optional redaction tokenizes IPs and host names, 20 questions per minute per principal, audited.
+- Console: Insights page, copilot drawer with "Review plan", Explain on incidents, AI summary and insights on the Report.
+- `duvoractl insights`, `forecast`, `suggest`, `explain`, `ask`. Helm `ai.*` values; `deploy-remote.sh` passes `DUVORA_AI_*`.
+- Prometheus `duvora_anomalies`. The shift briefing gains insights and suggested allow-lists for devices in shadow, and its wording covers native eBPF.
+- Validated live on the 0.4.0 test node with the native agent and no language model: insights tracking agent metrics, allow-list suggestions from observed egress flows, rule-based explanations of TCP incidents with native eBPF evidence, and the template briefing summary.
+
 ## 0.4.0
 
 - Native eBPF, no sidecar: `duvora-agent --ebpf auto|required` loads Duvora's own programs through the system libbpf (Python ctypes, libbpf 1.3 or later). New Apache-2.0 BPF sources in `bpf/`, compiled by `make bpf` and shipped in `duvora/bpf/obj/`:

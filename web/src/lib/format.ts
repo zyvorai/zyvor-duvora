@@ -49,6 +49,20 @@ export function bytes(value: number | undefined): string {
   return `${i ? v.toFixed(1) : v} ${units[i]}`;
 }
 
+/** Coverage ratio 0–1 as a percent with one decimal: 0.9989 → "99.9%". */
+export const percent = (ratio: number) => `${(Math.round(ratio * 1000) / 10).toString()}%`;
+
+/** Hours until a forecast threshold, as "45m", "5.5 h" or "3.2 d". */
+export function eta(hours: number | null | undefined): string {
+  if (hours === null || hours === undefined || !Number.isFinite(hours)) return 'Not trending toward it';
+  if (hours < 1) return `${Math.max(1, Math.round(hours * 60))}m`;
+  if (hours < 48) return `${Math.round(hours * 10) / 10} h`;
+  return `${Math.round((hours / 24) * 10) / 10} d`;
+}
+
+/** Signed z-score with direction: 5.2 → "5.2σ above", -4 → "4σ below". */
+export const zLabel = (z: number) => `${Math.abs(z)}σ ${z >= 0 ? 'above' : 'below'}`;
+
 /** Seconds until an epoch-seconds deadline, as "12m 30s"; "expired" once past. */
 export function remaining(until: number | null | undefined, now = Date.now() / 1000): string {
   if (!until) return '—';

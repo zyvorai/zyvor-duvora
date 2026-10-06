@@ -19,6 +19,7 @@
 static void *(*bpf_map_lookup_elem)(void *map, const void *key) = (void *)BPF_FUNC_map_lookup_elem;
 static long (*bpf_map_update_elem)(void *map, const void *key, const void *value, __u64 flags) = (void *)BPF_FUNC_map_update_elem;
 static __u64 (*bpf_ktime_get_ns)(void) = (void *)BPF_FUNC_ktime_get_ns;
+static long (*bpf_skb_load_bytes)(const void *skb, __u32 offset, void *to, __u32 len) = (void *)BPF_FUNC_skb_load_bytes;
 
 #define DV_AF_INET 4u
 #define DV_AF_INET6 6u
@@ -35,7 +36,8 @@ struct dv_packet {
     __u8 has_ports;
     __u8 first_frag;
     __u8 tcp_flags; // bit0 SYN, bit1 ACK
-    __u8 pad[3];
+    __u8 pad;
+    __u16 payload_off; // L4 payload offset from the frame start; 0 when unknown
     __u16 sport;
     __u16 dport;
     __u8 saddr[16];
@@ -45,7 +47,7 @@ struct dv_packet {
 #define DV_TCP_SYN 1u
 #define DV_TCP_ACK 2u
 
-static __always_inline void dv_ports(void *l4, void *end, struct dv_packet *p)
+static __always_inline void dv_ports(void *data, void *l4, void *end, struct dv_packet *p)
 {
     if (p->protocol == IPPROTO_TCP) {
         struct tcphdr *t = l4;
@@ -55,6 +57,7 @@ static __always_inline void dv_ports(void *l4, void *end, struct dv_packet *p)
         p->dport = __builtin_bswap16(t->dest);
         p->tcp_flags = (t->syn ? DV_TCP_SYN : 0) | (t->ack ? DV_TCP_ACK : 0);
         p->has_ports = 1;
+        p->payload_off = (__u16)((l4 - data) + (__u32)t->doff * 4);
     } else if (p->protocol == IPPROTO_UDP) {
         struct udphdr *u = l4;
         if ((void *)(u + 1) > end)
@@ -62,6 +65,7 @@ static __always_inline void dv_ports(void *l4, void *end, struct dv_packet *p)
         p->sport = __builtin_bswap16(u->source);
         p->dport = __builtin_bswap16(u->dest);
         p->has_ports = 1;
+        p->payload_off = (__u16)((void *)(u + 1) - data);
     }
 }
 
@@ -98,7 +102,7 @@ static __always_inline int dv_parse(struct __sk_buff *skb, struct dv_packet *p)
             p->first_frag = 0;
             return 1;
         }
-        dv_ports((void *)ip + (__u32)ip->ihl * 4, end, p);
+        dv_ports(data, (void *)ip + (__u32)ip->ihl * 4, end, p);
         return 1;
     }
     if (proto == ETH_P_IPV6) {
@@ -109,7 +113,7 @@ static __always_inline int dv_parse(struct __sk_buff *skb, struct dv_packet *p)
         p->protocol = ip6->nexthdr;
         __builtin_memcpy(p->saddr, ip6->saddr.in6_u.u6_addr8, 16);
         __builtin_memcpy(p->daddr, ip6->daddr.in6_u.u6_addr8, 16);
-        dv_ports(ip6 + 1, end, p);
+        dv_ports(data, ip6 + 1, end, p);
         return 1;
     }
     return 0;

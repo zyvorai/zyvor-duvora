@@ -23,6 +23,7 @@ class HistoryMixin:
     def record_sample(self, device, metrics, ts=None):
         if metrics:
             self.db.execute("INSERT INTO samples(device, ts, metrics) VALUES(?,?,?)", (device, ts or time.time(), canonical(metrics)))
+            self.update_baselines(device, metrics)
 
     def simulate_metrics(self, now=None):
         """Random-walk the demo counters around their seeded baseline and sample every device."""

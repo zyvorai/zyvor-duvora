@@ -3,9 +3,10 @@ import { api } from './api';
 import type { Page } from './lib/navGroups';
 import type { Device, Session, Snapshot } from './types';
 
-export type PlanAction = 'isolate' | 'release' | 'deploy' | 'upgrade';
+export type PlanAction = 'isolate' | 'release' | 'deploy' | 'upgrade' | 'steer' | 'unsteer';
 export interface PlanPreset {
   stage?: 'shadow' | 'enforce';
+  ruleset?: string;
   policy?: { name: string; tenant: string; cidr: string; ports: number[] };
 }
 export type DialogState = { kind: 'plan'; action: PlanAction; devices: string[]; preset?: PlanPreset } | { kind: 'inspect'; device: Device } | null;

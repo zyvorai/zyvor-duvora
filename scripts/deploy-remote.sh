@@ -24,6 +24,12 @@
 #   DUVORA_EBPF_ENFORCE     same as DUVORA_NETRA_ENFORCE
 #   DUVORA_AGENT            1 builds the native eBPF agent image and runs it as a DaemonSet,
 #                           with a host-bound key per node kept in ~/.duvora/agent-keys.json (default 0)
+#   DUVORA_AI_URL, DUVORA_AI_MODEL, DUVORA_AI_KEY, DUVORA_AI_REDACT, DUVORA_AI_ALLOW_HTTP
+#                           optional OpenAI-compatible model for the copilot and written explanations
+#   DUVORA_SIEM_URL, DUVORA_SIEM_KEY, DUVORA_SIEM_SYSLOG
+#                           optional SIEM export (webhook and/or syslog)
+#   DUVORA_NOTIFY_URL, DUVORA_NOTIFY_KEY   optional playbook notification webhook
+#   DUVORA_REQUIRE_SCAN     1 blocks deploys of images without a passed artifact scan
 #   DUVORA_REMOTE_SUBDIR    remote checkout relative to $HOME (default .deployments/duvora)
 #   DUVORA_DEPLOY_MAX_DISK_PCT   refuse above this root-disk usage (default 95)
 #   DUVORA_DEPLOY_READY_TIMEOUT  seconds to wait for the rollout (default 600)
@@ -42,13 +48,13 @@ VERIFY_ONLY=false
 TARGET=""
 POSITIONAL=()
 SSH_OPTS=(-o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30)
-VERSION="0.4.0"
+VERSION="0.5.0"
 IMAGE="ghcr.io/zyvorai/duvora:${VERSION}"
 AGENT_IMAGE="ghcr.io/zyvorai/duvora-agent:${VERSION}"
 PORT=30880
 
 usage() {
-  sed -n '2,31p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,33p' "$0" | sed 's/^# \{0,1\}//'
   exit 0
 }
 
@@ -89,6 +95,17 @@ DEMO="${DUVORA_DEMO:-1}"
 NETRA="${DUVORA_NETRA:-auto}"
 NETRA_ENFORCE="${DUVORA_EBPF_ENFORCE:-${DUVORA_NETRA_ENFORCE:-0}}"
 AGENT="${DUVORA_AGENT:-0}"
+AI_URL="${DUVORA_AI_URL:-}"
+AI_MODEL="${DUVORA_AI_MODEL:-}"
+AI_KEY="${DUVORA_AI_KEY:-}"
+AI_REDACT="${DUVORA_AI_REDACT:-0}"
+AI_ALLOW_HTTP="${DUVORA_AI_ALLOW_HTTP:-0}"
+SIEM_URL="${DUVORA_SIEM_URL:-}"
+SIEM_KEY="${DUVORA_SIEM_KEY:-}"
+SIEM_SYSLOG="${DUVORA_SIEM_SYSLOG:-}"
+NOTIFY_URL="${DUVORA_NOTIFY_URL:-}"
+NOTIFY_KEY="${DUVORA_NOTIFY_KEY:-}"
+REQUIRE_SCAN="${DUVORA_REQUIRE_SCAN:-0}"
 MAX_DISK="${DUVORA_DEPLOY_MAX_DISK_PCT:-95}"
 READY_TIMEOUT="${DUVORA_DEPLOY_READY_TIMEOUT:-600}"
 SUBDIR="${DUVORA_REMOTE_SUBDIR:-.deployments/duvora}"
@@ -130,6 +147,17 @@ NETRA=$(q "$NETRA")
 NETRA_ENFORCE=$(q "$NETRA_ENFORCE")
 AGENT=$(q "$AGENT")
 AGENT_IMAGE=$(q "$AGENT_IMAGE")
+AI_URL=$(q "$AI_URL")
+AI_MODEL=$(q "$AI_MODEL")
+AI_KEY=$(q "$AI_KEY")
+AI_REDACT=$(q "$AI_REDACT")
+AI_ALLOW_HTTP=$(q "$AI_ALLOW_HTTP")
+SIEM_URL=$(q "$SIEM_URL")
+SIEM_KEY=$(q "$SIEM_KEY")
+SIEM_SYSLOG=$(q "$SIEM_SYSLOG")
+NOTIFY_URL=$(q "$NOTIFY_URL")
+NOTIFY_KEY=$(q "$NOTIFY_KEY")
+REQUIRE_SCAN=$(q "$REQUIRE_SCAN")
 log() { printf '[duvora-remote] %s\n' "\$*"; }
 
 used=\$(df -P / | awk 'NR==2 {gsub("%","",\$5); print \$5}')
@@ -312,7 +340,9 @@ print(json.dumps(keys))')"
   # --set splits on commas, so the password and JSON keys go through a private values file (JSON is YAML).
   VALUES="\$(mktemp)"; chmod 600 "\$VALUES"; trap 'rm -f "\$VALUES"' EXIT
   P="\$ADMIN_PASSWORD" K="\$KEYS" D="\$DEMO" NU="\$NETRA_URL" NK="\$NETRA_KEY" NC="\$NETRA_CA" NE="\$NETRA_ENFORCE" \
-  AK="\$AGENT_KEYS" AI="\$AGENT_IMAGE" AU="https://\$HOST_IP:\$PORT" python3 -c 'import json, os
+  AK="\$AGENT_KEYS" AI="\$AGENT_IMAGE" AU="https://\$HOST_IP:\$PORT" \
+  LU="\$AI_URL" LM="\$AI_MODEL" LK="\$AI_KEY" LR="\$AI_REDACT" LH="\$AI_ALLOW_HTTP" \
+  SU="\$SIEM_URL" SK="\$SIEM_KEY" SS="\$SIEM_SYSLOG" OU="\$NOTIFY_URL" OK="\$NOTIFY_KEY" RS="\$REQUIRE_SCAN" python3 -c 'import json, os
 v = {"auth": {"adminPassword": os.environ["P"], "keys": os.environ["K"]}, "demo": os.environ["D"] == "1",
      "ebpf": {"enforce": os.environ["NE"] == "1"}}
 if os.environ["NU"]:
@@ -322,6 +352,14 @@ if os.environ["AK"]:
     # The serving certificate names the host IP, so agents (host network) connect there.
     v["agent"] = {"enabled": True, "keys": json.loads(os.environ["AK"]), "url": os.environ["AU"],
                   "image": {"repository": repo, "tag": tag}}
+if os.environ["LU"]:
+    v["ai"] = {"url": os.environ["LU"], "model": os.environ["LM"], "key": os.environ["LK"],
+               "redact": os.environ["LR"] == "1", "allowHttp": os.environ["LH"] == "1"}
+if os.environ["SU"] or os.environ["SS"]:
+    v["siem"] = {"url": os.environ["SU"], "key": os.environ["SK"], "syslog": os.environ["SS"]}
+if os.environ["OU"]:
+    v["notify"] = {"url": os.environ["OU"], "key": os.environ["OK"]}
+v["scan"] = {"required": os.environ["RS"] == "1"}
 print(json.dumps(v))' > "\$VALUES"
   helm upgrade --install duvora ./helm/duvora \
     --namespace duvora --create-namespace \
@@ -347,7 +385,12 @@ print(json.dumps(v))' > "\$VALUES"
   if [[ "\$AGENT" == 1 ]]; then
     ensure_image "\$AGENT_IMAGE"
     kubectl -n duvora rollout restart daemonset/duvora-agent
-    kubectl -n duvora rollout status daemonset/duvora-agent --timeout=180s || kubectl -n duvora logs -l app.kubernetes.io/component=agent --tail=30 >&2
+    if ! kubectl -n duvora rollout status daemonset/duvora-agent --timeout=180s; then
+      log "agent rollout stalled; re-checking its image and retrying once"
+      ensure_image "\$AGENT_IMAGE"
+      kubectl -n duvora delete pod -l app.kubernetes.io/component=agent --wait=false
+      kubectl -n duvora rollout status daemonset/duvora-agent --timeout=\${READY_TIMEOUT}s || kubectl -n duvora logs -l app.kubernetes.io/component=agent --tail=30 >&2
+    fi
   fi
 fi
 

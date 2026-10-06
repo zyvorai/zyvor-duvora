@@ -124,6 +124,279 @@ export interface Device {
   metrics_source?: string;
   ebpf?: DeviceEbpf;
   netra_isolation?: DuvoraIsolation;
+  steering?: DeviceSteering | null;
+  steering_status?: SteeringStatus | null;
+}
+
+export type SteerAction = 'bypass' | 'allow' | 'inspect' | 'drop';
+
+export interface SteeringRule {
+  priority: number;
+  name: string;
+  direction: 'egress' | 'ingress' | 'both';
+  src: string;
+  dst: string;
+  protocol: string;
+  sport: string;
+  dport: string;
+  action: SteerAction;
+  note?: string;
+}
+
+export interface RuleSet {
+  id: string;
+  description: string;
+  default: 'bypass' | 'drop';
+  rules: SteeringRule[];
+  digest: string;
+  updated?: number;
+  updated_by?: string;
+}
+
+export interface RuleSetSummary extends Omit<RuleSet, 'rules'> {
+  rule_count: number;
+  actions: Record<SteerAction, number>;
+  devices: string[];
+}
+
+export interface DeviceSteering {
+  ruleset: string;
+  digest: string;
+  stage: 'shadow' | 'enforce';
+  mode: 'simulation' | 'native';
+  default: 'bypass' | 'drop';
+  rule_count: number;
+  job?: string;
+  updated?: number;
+  bypass?: { engaged: boolean; reason?: string; since?: number; by?: string };
+  node?: string;
+  lease_until?: number | null;
+}
+
+export interface SteeringStatus {
+  mode: string;
+  attached?: boolean;
+  unavailable?: string;
+  effective_mode?: string;
+  demoted?: string;
+  stats: Partial<Record<'matched' | 'allowed' | 'dropped' | 'would_drop' | 'inspected' | 'bypassed' | 'exempt' | 'dropped_bytes' | 'would_drop_bytes', number>>;
+  stats_delta?: Record<string, number>;
+  rules?: Record<string, { packets: number; bytes: number }>;
+  updated?: number;
+}
+
+export interface SteeringOverview {
+  sets: RuleSetSummary[];
+  limits: { max_rules: number; actions: SteerAction[]; defaults: string[] };
+  enforce_allowed: boolean;
+  kill_switch: boolean;
+  note: string;
+  devices: { id: string; host: string; source: string; provider: string; steer_available: boolean; steering: DeviceSteering | null; status: SteeringStatus | null }[];
+}
+
+export interface Verdict {
+  id: number;
+  ts: number;
+  device: string;
+  direction: 'egress' | 'ingress';
+  src: string;
+  dst: string;
+  protocol: string;
+  sport: number | null;
+  dport: number | null;
+  action: SteerAction;
+  rule: string | null;
+  stage: string;
+  packets: number;
+  bytes: number;
+  source: string;
+}
+
+export interface SteeringReplay {
+  flows: number;
+  unresolved: number;
+  actions: Record<SteerAction, { flows: number; packets: number; bytes: number }>;
+  rules: Record<string, { flows: number; bytes: number; action: SteerAction }>;
+  top: Partial<Record<SteerAction, { peer: string; port: number | null; bytes: number; rule: string | null; direction: string }[]>>;
+  source?: string;
+  note?: string;
+}
+
+export interface SteeringSuggestions {
+  device: string;
+  ruleset: Omit<RuleSet, 'digest'>;
+  reasons?: { rule: string; why: string }[];
+  narrative?: string;
+}
+
+export interface LlmEndpoint {
+  device: string;
+  endpoint: string;
+  peer: string | null;
+  port: number | null;
+  provider: string;
+  kind: 'hosted' | 'self-hosted' | 'mcp';
+  serves: string;
+  first: number;
+  last: number;
+  requests: number;
+  findings: number;
+  source: string;
+  clients: string[];
+}
+
+export interface AiFinding {
+  id: number;
+  ts: number;
+  device: string;
+  kind: 'prompt-injection' | 'secret' | 'pii';
+  detail: string;
+  severity: 'info' | 'warning' | 'critical';
+  snippet: string;
+  endpoint?: string;
+  direction?: string;
+  peer?: string | null;
+  client?: string | null;
+  source?: string;
+}
+
+export interface AiAsset {
+  device: string;
+  host: string;
+  name: string;
+  kind: string;
+  port: number;
+  first: number;
+  last: number;
+  source: string;
+  evidence: string;
+  process?: string;
+  sanctioned?: boolean;
+}
+
+export interface AiAssets {
+  assets: AiAsset[];
+  sanctioned: { id: string; name?: string; kind?: string; device?: string; note?: string }[];
+  policy_active: boolean;
+  unsanctioned: number;
+}
+
+export interface AiTraffic {
+  generated: number;
+  endpoints: LlmEndpoint[];
+  findings: AiFinding[];
+  counts_24h: Record<'prompt-injection' | 'secret' | 'pii', number>;
+  coverage: { overall: number; devices?: Record<string, number> } & Record<string, unknown>;
+  assets?: AiAssets;
+}
+
+export interface ScanFinding {
+  severity: 'info' | 'low' | 'medium' | 'high' | 'critical';
+  kind: string;
+  detail: string;
+  path: string;
+}
+
+export interface Scan {
+  id: string;
+  kind: 'image' | 'url';
+  target: string;
+  status: 'running' | 'passed' | 'failed' | 'error';
+  actor: string;
+  started: number;
+  finished: number | null;
+  findings: ScanFinding[];
+  error: string | null;
+}
+
+export interface IntelFeed {
+  id: string;
+  description?: string;
+  url?: string;
+  format: string;
+  count: number;
+  networks?: number;
+  domains: number;
+  error: string | null;
+  last_fetch?: number | null;
+  refresh_minutes?: number;
+  enabled?: boolean;
+}
+
+export interface IntelOverview {
+  feeds: IntelFeed[];
+  matches: { device: string; peer: string; port: number | null; feed: string; indicator: string; direction?: string; bytes?: number; last?: number }[];
+  [key: string]: unknown;
+}
+
+export interface Playbook {
+  id: string;
+  name: string;
+  enabled: boolean;
+  match: { rules: string[]; min_severity: string };
+  steps: { type: string; url?: string }[];
+}
+
+export interface PlaybookRun {
+  id: string;
+  playbook: string;
+  name: string;
+  incident: string;
+  rule: string;
+  target: string;
+  created: number;
+  requested_by: string | null;
+  steps: { type: string; ok: boolean; detail: string; confirmation?: string }[];
+  plans: { id: string; mode: string; confirmation: string; blockers: string[]; expires: number; effects: string; ruleset: string }[];
+}
+
+export interface SiemStatus {
+  configured: boolean;
+  webhook?: string | null;
+  syslog?: string | null;
+  verdicts?: string;
+  categories: string[];
+  queued?: number;
+  sent?: number;
+  dropped?: number;
+  failed?: number;
+  last_error?: string | null;
+  note?: string;
+}
+
+export interface AgentIdentity {
+  host: string;
+  static_key: boolean;
+  tokens: number;
+  token_expires: number | null;
+  last_rotation: number | null;
+  last_seen: number | null;
+  last_via: string | null;
+  mtls_verified: boolean;
+  cert_names: string[];
+  known_device: boolean;
+  unknown: boolean;
+  rejections: { time: number; reason: string }[];
+}
+
+export interface AgentIdentities {
+  identities: AgentIdentity[];
+  mtls: 'off' | 'optional' | 'require';
+  bootstrap_only: boolean;
+  token_ttl: number;
+}
+
+export type Resources = Partial<Record<'arm_cores' | 'memory_gb' | 'storage_gb', number>>;
+
+export interface Budget {
+  device: string;
+  model: string;
+  capacity: Resources;
+  reserved: Resources;
+  used: Resources;
+  free: Resources;
+  services: { name: string; resources?: Resources }[];
+  [key: string]: unknown;
 }
 
 export interface KillSwitch {
@@ -224,7 +497,8 @@ export interface Plan {
   mode: string;
   confirmation: string;
   netra?: boolean;
-  shadow?: Record<string, ShadowReplay>;
+  job_mode?: 'steer-native' | 'simulation';
+  shadow?: Record<string, ShadowReplay | SteeringReplay>;
   effects: string;
   expires: number;
   blockers: string[];
@@ -249,7 +523,7 @@ export interface Incident {
 export interface AlertRule {
   id: string;
   name: string;
-  kind: 'metric' | 'health' | 'stale' | 'job' | 'ebpf' | 'isolation' | 'isolation-enforce';
+  kind: string;
   metric?: string;
   threshold?: number;
   severity: 'info' | 'warning' | 'critical';
@@ -279,6 +553,136 @@ export interface Briefing {
   jobs: Job[];
   playbook: string[];
   markdown: string;
+  anomalies?: Anomaly[];
+  forecasts?: (Forecast & { device: string })[];
+  new_destinations?: NewDestination[];
+  allowlist_suggestions?: { device: string; cidr: string; ports: number[]; coverage_bytes: number }[];
+  summary?: string | null;
+  summary_source?: 'llm' | 'template' | null;
+  ai_posture?: AiPosture;
+}
+
+export interface AiPostureCheck {
+  name: string;
+  weight: number;
+  score: number;
+  status: 'pass' | 'warn' | 'fail';
+  detail: string;
+  action: string;
+}
+
+export interface AiPosture {
+  generated: number;
+  score: number;
+  grade: string;
+  checks: AiPostureCheck[];
+  steering: { shadow: number; enforce: number; bypass: number; devices: number };
+  note: string;
+}
+
+export interface AiStatus {
+  llm: boolean;
+  model: string | null;
+  endpoint: string | null;
+  redact: boolean;
+  local: string[];
+}
+
+export interface Anomaly {
+  device: string;
+  metric: string;
+  value: number;
+  baseline: number;
+  std: number;
+  z: number;
+  samples: number;
+}
+
+export interface Forecast {
+  metric: string;
+  threshold: number;
+  points: number;
+  current: number | null;
+  slope_per_hour: number | null;
+  r2: number | null;
+  eta_hours: number | null;
+  reliable: boolean;
+}
+
+export interface NewDestination {
+  device: string;
+  peer: string;
+  port: number;
+  protocol: string;
+  first_seen: number;
+  bytes: number;
+}
+
+export interface Insights {
+  generated: number;
+  anomalies: Anomaly[];
+  new_destinations: NewDestination[];
+  forecasts: (Forecast & { device: string })[];
+  forecast_horizon_hours: number;
+  baselines: { tracked: number; warm: number; warmup: number };
+}
+
+export interface AllowlistCandidate {
+  cidr: string;
+  ports: number[];
+  coverage_bytes: number;
+  coverage_flows: number;
+  addresses: number;
+  would_block_top: { peer: string; port: number; packets: number; bytes: number }[];
+  policy: { name: string; tenant: string; cidr: string; ports: number[] };
+}
+
+export interface AllowlistSuggestions {
+  device: string;
+  source: string;
+  note: string;
+  flows: number;
+  bytes: number;
+  candidates: AllowlistCandidate[];
+}
+
+export interface Hypothesis {
+  id: string;
+  confidence: 'high' | 'medium' | 'low';
+  text: string;
+  signals: string[];
+}
+
+export interface Explanation {
+  incident: Incident;
+  hypotheses: Hypothesis[];
+  narrative: string;
+  narrative_source: 'llm' | 'template';
+  narrative_error?: string;
+  related: { id: string; rule: string; target: string; title: string; severity: string; state: string; opened: number }[];
+  jobs: { id: string; action: string; state: string; created: number; stage?: string }[];
+  anomalies: Anomaly[];
+}
+
+export interface CopilotMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface CopilotPlan {
+  id: string;
+  spec: { action: string; devices: string[]; stage?: 'shadow' | 'enforce'; policy?: { name: string; tenant: string; cidr: string; ports: number[] } };
+  mode: string;
+  blockers: string[];
+  confirmation: string;
+  effects: string;
+}
+
+export interface CopilotReply {
+  reply: string;
+  tools: { name: string; ok: boolean }[];
+  plans: CopilotPlan[];
+  model: string;
 }
 
 export interface TopologyNode {

@@ -26,12 +26,16 @@
 
 ---
 
-> **Status: 0.4.0 is a runnable evaluation release.** It implements a complete local simulation workflow, read-only hardware inventory bridges, and native eBPF: the host agent (`duvora-agent --ebpf`) loads Duvora's own programs for kernel telemetry and node isolation in shadow or leased enforce mode, with [Netra](https://github.com/zyvorai/zyvor-netra) as an optional alternative source ([docs/EBPF.md](docs/EBPF.md)). It does not flash firmware, provision physical DPUs, launch DPU containers, enforce DPU hardware policies, or accelerate storage. See the [capability matrix](docs/STATUS.md) before using it.
+> **Status: 0.5.0 is a runnable evaluation release.** It implements a complete local simulation workflow, read-only hardware inventory bridges, and native eBPF: the host agent (`duvora-agent --ebpf`) loads Duvora's own programs for kernel telemetry and node isolation in shadow or leased enforce mode, with [Netra](https://github.com/zyvorai/zyvor-netra) as an optional alternative source ([docs/EBPF.md](docs/EBPF.md)). AI features: local anomaly detection, forecasts, new-destination alerts, allow-list suggestions and incident explanations, plus an optional ops copilot over any OpenAI-compatible model that drafts plans but never applies them ([docs/AI.md](docs/AI.md)). Traffic steering (bypass, allow, inspect, drop) runs in the host kernel through `duvora_steer` or in simulation, and feeds LLM traffic inspection, AI asset discovery, artifact scanning, threat intel and draft-only playbooks ([docs/STEERING.md](docs/STEERING.md)). It does not flash firmware, provision physical DPUs, launch DPU containers, enforce DPU hardware policies, or accelerate storage. See the [capability matrix](docs/STATUS.md) before using it.
 
 ## What's new
 
 | Release | What landed |
 |---|---|
+| **0.5.0** | Traffic steering: ordered 5-tuple rules (bypass, allow, inspect, drop) on the host kernel through `duvora_steer` (TCX) or in simulation; shadow first, leased enforce, per-device bypass, verdicts and revision-guarded rollback ([docs/STEERING.md](docs/STEERING.md)) |
+| **0.5.0** | AI security: LLM traffic inspection (prompt injection, secrets, personal data), AI asset discovery, image and model artifact scanning, threat-intel feeds, draft-only playbooks and an AI posture score |
+| **0.5.0** | Ops copilot over any OpenAI-compatible model with read-only tools; it drafts plans but never applies them |
+| **0.5.0** | Agent identity (mutual TLS, rotating tokens), SIEM export, resource headroom per device, and `duvoractl` commands for all of it |
 | **0.4.0** | Native eBPF, no sidecar: `duvora-agent --ebpf auto\|required` loads Duvora's own programs through the system libbpf (Python ctypes) |
 | **0.4.0** | Four BPF programs: TCX counters and top talkers (`duvora_iface`), kernel drop reasons (`duvora_drops`), TCP retransmits and resets (`duvora_tcp`), allow-only egress node isolation (`duvora_nodeiso`) |
 | **0.4.0** | Agent-side safety: enforce falls back to shadow when the lease lapses or the control plane is unreachable; `/run/duvora/isolation-off` turns isolation off locally |
@@ -118,9 +122,12 @@ The console uses the Zyvor Netra design language — the same sign-in screen, me
 |---|---|
 | Overview | Fleet pulse, readiness, sources, activity |
 | Fleet | DPU fleet (search, filters, inspect), Topology, Telemetry history (1h/24h/7d) |
-| Operate | Services, Isolation (plan, apply, evaluate), Operations (jobs, rollback) |
-| Monitor | Incidents, Alert rules, Scorecard, Shift briefing (Markdown download) |
-| Govern | Audit trail, Users (admin/viewer, passwords, tokens), Capabilities |
+| Operate | Services (with resource budgets), Isolation (plan, apply, evaluate), Steering (rule sets, shadow and enforce, bypass, verdicts), Operations (jobs, rollback) |
+| AI security | AI traffic (LLM endpoints, prompt injection, secrets, AI assets), Threats (intel feeds, artifact scans), Playbooks (draft-only responses) |
+| Monitor | Incidents (with Explain), Insights (anomalies, forecasts, new destinations), Alert rules, Scorecard, Shift briefing (Markdown download, AI summary, AI posture) |
+| Govern | Audit trail, Users (admin/viewer, passwords, tokens), Agents & SIEM (agent tokens, mTLS, export), Capabilities |
+
+**Ask copilot** (bottom right) answers questions about the fleet when a language model is configured.
 
 Select a device in **DPU fleet**, open **Isolation**, create a policy, preview it, and apply the simulation. Watch the job complete in **Operations**. Test an allowed and denied destination, then roll back the job. Viewers see everything with write controls disabled.
 
@@ -134,6 +141,13 @@ duvoractl plan examples/isolate.json
 duvoractl apply PLAN_ID --confirm 'APPLY SIMULATION'
 duvoractl incidents && duvoractl scorecard && duvoractl report --markdown
 duvoractl history bf3-01 --window 24h
+duvoractl insights && duvoractl suggest netra-node-1 && duvoractl explain INCIDENT_ID
+duvoractl ask "what needs attention right now?"   # needs DUVORA_AI_URL on the server
+duvoractl steering && duvoractl steer ai-gateway bf3-03 --confirm 'APPLY SIMULATION'
+duvoractl verdicts --action drop && duvoractl flow bf3-01 --dst 185.220.101.9 --dport 9001
+duvoractl bypass bf3-01 on --confirm 'BYPASS bf3-01' && duvoractl budget bf3-01
+duvoractl ai-traffic && duvoractl assets && duvoractl intel && duvoractl playbooks runs
+duvoractl scan --file model.pt                    # offline; nothing is uploaded
 duvoractl users add alice --role viewer
 duvoractl backup duvora.db
 ```
@@ -186,6 +200,12 @@ node tests/e2e.cjs                    # Playwright workflow against a running de
 | `duvora/core.py` | SQLite state, plans, reconciliation, isolation evaluation, rollback, housekeeping |
 | `duvora/auth.py` | Users, password hashing, sessions, API tokens, sign-in rate limit |
 | `duvora/history.py`, `alerts.py`, `reports.py` | Telemetry history, alert rules and incidents, scorecard/briefing/topology |
+| `duvora/insights.py`, `llm.py`, `copilot.py` | Local analytics (baselines, forecasts, suggestions, evidence), optional LLM client, ops copilot |
+| `duvora/steering.py`, `budget.py` | Traffic steering rule sets, plans, bypass, verdicts; resource budgets |
+| `duvora/inspection.py`, `aiprotect.py`, `aiassets.py` | Payload analysis (LLM endpoints, injection, secrets, personal data), AI traffic, AI asset discovery |
+| `duvora/scanner.py`, `intel.py`, `playbooks.py` | Artifact scanning, threat-intel feeds, draft-only playbooks |
+| `duvora/identity.py`, `siem.py` | Agent tokens and mTLS, SIEM export |
+| `bpf/`, `duvora/bpf/` | eBPF sources (`duvora_iface`, `duvora_drops`, `duvora_tcp`, `duvora_nodeiso`, `duvora_steer`) and the libbpf loader |
 | `duvora/server.py` | HTTP routes, authentication, static console, TLS |
 | `duvora/cli.py` | `duvoractl` |
 | `duvora/agent.py`, `dpf.py` | Read-only Linux PCI and DPF inventory |
@@ -199,7 +219,7 @@ node tests/e2e.cjs                    # Playwright workflow against a running de
 
 ## Maturity
 
-> **0.4.0 is a complete runnable evaluation repository, not a complete production DPU orchestration implementation.** Working and tested: the HTTP API and SQLite persistence, sign-in and users, the console, the CLI, telemetry history, alert rules and incidents, the simulation workflows, read-only PCI and DPF inventory, the native eBPF agent, and shadow and enforced node isolation (live tested on Linux 7.0 beside Cilium). **Not implemented:** hardware OS provisioning, DPU service execution, DPU hardware firewall or tenant isolation, firmware/BFB flashing, vendor hardware counter collectors, NVMe-oF/DOCA SNAP/RDMA offload, SSO/OIDC, tenant RBAC and HA. Node isolation is host-kernel enforcement on the node, not DPU offload. The full matrix: [docs/STATUS.md](docs/STATUS.md).
+> **0.5.0 is a complete runnable evaluation repository, not a complete production DPU orchestration implementation.** Working and tested: the HTTP API and SQLite persistence, sign-in and users, the console, the CLI, telemetry history, alert rules and incidents, the simulation workflows, read-only PCI and DPF inventory, the native eBPF agent, shadow and enforced node isolation (live tested on Linux 7.0 beside Cilium), host-kernel traffic steering with shadow verdicts, bypass and rollback, and LLM traffic inspection (live tested on k3s). **Not implemented:** hardware OS provisioning, DPU service execution, DPU hardware firewall or tenant isolation, firmware/BFB flashing, vendor hardware counter collectors, NVMe-oF/DOCA SNAP/RDMA offload, SSO/OIDC, tenant RBAC and HA. Node isolation and traffic steering are host-kernel enforcement on the node, not DPU offload. The full matrix: [docs/STATUS.md](docs/STATUS.md).
 
 ---
 

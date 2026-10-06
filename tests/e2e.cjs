@@ -75,6 +75,41 @@ async function menu(page, group, item) {
   await page.getByRole('button', { name: 'Roll back' }).first().click();
   await page.getByText('rolled-back', { exact: true }).waitFor({ timeout: 10000 });
 
+  // Steering: the demo rule set, a decision test, a simulated steer plan, and bypass with typed confirmation.
+  await menu(page, 'Operate', 'Steering');
+  await page.getByRole('heading', { name: 'Policies to steer by' }).waitFor();
+  await page.getByRole('table', { name: 'Rule sets' }).getByText('ai-gateway', { exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Evaluate', exact: true }).click();
+  await page.getByText('DROP by drop-tor-exits').waitFor();
+  await page.getByRole('table', { name: 'Device steering' }).getByRole('row', { name: /bf3-04/ }).getByRole('button', { name: 'Steer' }).click();
+  await page.getByRole('button', { name: 'Preview change' }).click();
+  await page.getByRole('button', { name: 'Apply simulation', exact: true }).click();
+  await page.getByRole('heading', { name: 'Every change, accounted for.' }).waitFor();
+  await page.locator('tbody tr').filter({ hasText: 'steer' }).getByText('succeeded', { exact: true }).first().waitFor({ timeout: 15000 });
+  await menu(page, 'Operate', 'Steering');
+  await page.getByRole('table', { name: 'Device steering' }).getByRole('row', { name: /bf3-04/ }).getByText('shadow').waitFor();
+  page.once('dialog', (d) => d.accept('BYPASS bf3-04'));
+  await page.getByRole('table', { name: 'Device steering' }).getByRole('row', { name: /bf3-04/ }).getByRole('button', { name: 'Bypass' }).click();
+  await page.getByRole('table', { name: 'Device steering' }).getByRole('row', { name: /bf3-04/ }).getByText(/^on · operator/).waitFor();
+  await shot(page, 'steering');
+
+  await menu(page, 'Operate', 'Services');
+  await page.getByRole('heading', { name: 'Resource headroom' }).waitFor();
+  await page.getByRole('cell', { name: 'Arm cores' }).waitFor();
+
+  await menu(page, 'AI security', 'AI traffic');
+  await page.getByRole('heading', { name: 'Where AI traffic goes' }).waitFor();
+  await page.getByRole('heading', { name: 'AI services running on nodes' }).waitFor();
+  await shot(page, 'ai-traffic');
+  await menu(page, 'AI security', 'Threats');
+  await page.getByRole('heading', { name: 'Images and models before they deploy' }).waitFor();
+  await menu(page, 'AI security', 'Playbooks');
+  await page.getByRole('heading', { name: 'Prepare the response, never apply it' }).waitFor();
+  await page.getByRole('table', { name: 'Playbooks' }).waitFor();
+  await menu(page, 'Govern', 'Agents');
+  await page.getByRole('heading', { name: 'Who is reporting' }).waitFor();
+  await page.getByText('Not configured.').waitFor();
+
   await menu(page, 'Fleet', 'Topology');
   await page.getByRole('img', { name: 'Fleet topology' }).waitFor();
   await shot(page, 'topology');
@@ -85,6 +120,19 @@ async function menu(page, group, item) {
   await menu(page, 'Monitor', 'Incidents');
   await page.getByText('Device health degraded on bf3-03').first().waitFor({ timeout: 15000 });
   await shot(page, 'incidents');
+  await page.getByRole('row', { name: /Device health degraded on bf3-03/ }).getByRole('button', { name: 'Explain' }).click();
+  await page.getByText('source degraded').waitFor();
+  await page.getByText('Assembled from rule-based checks of the evidence.').waitFor();
+
+  await menu(page, 'Monitor', 'Insights');
+  await page.getByRole('heading', { name: 'Away from baseline' }).waitFor();
+  await page.getByText('Set DUVORA_AI_URL and DUVORA_AI_MODEL').waitFor();
+  await shot(page, 'insights');
+
+  // Without a language model the copilot opens but explains that none is configured.
+  await page.getByRole('button', { name: 'Ask copilot' }).click();
+  await page.getByRole('complementary', { name: 'Ops copilot' }).getByText('No language model configured').waitFor();
+  await page.getByRole('button', { name: 'Close copilot' }).click();
 
   await menu(page, 'Monitor', 'Alert rules');
   await page.getByRole('table', { name: 'Alert rules' }).waitFor();
@@ -94,6 +142,9 @@ async function menu(page, group, item) {
 
   await menu(page, 'Monitor', 'Report');
   await page.getByRole('heading', { name: 'Shift briefing' }).waitFor();
+  await page.getByRole('button', { name: 'AI summary' }).click();
+  await page.getByText('Generated from the briefing data; no language model is configured.').waitFor();
+  await page.getByRole('heading', { name: /^AI posture: \d+/ }).waitFor();
 
   await menu(page, 'Govern', 'Users');
   await page.getByLabel('New username').fill('auditor');

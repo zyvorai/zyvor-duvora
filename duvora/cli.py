@@ -59,7 +59,7 @@ def check_url(url):
     return parts
 
 
-def open_url(url, path, token="", body=None, method=None, cookie="", ca_file=None):
+def open_url(url, path, token="", body=None, method=None, cookie="", ca_file=None, timeout=15):
     parts = check_url(url)
     data = json.dumps(body, allow_nan=False).encode() if body is not None else None
     headers = {"Accept": "application/json"}
@@ -74,8 +74,12 @@ def open_url(url, path, token="", body=None, method=None, cookie="", ca_file=Non
     if parts.scheme == "https":
         # A self-signed deployment is trusted by pinning its certificate, never by disabling verification.
         ca = ca_file if ca_file is not None else setting("DUVORA_CA_FILE")
-        handlers.append(urllib.request.HTTPSHandler(context=ssl.create_default_context(cafile=ca or None)))
-    return urllib.request.build_opener(*handlers).open(req, timeout=15)
+        context = ssl.create_default_context(cafile=ca or None)
+        if setting("DUVORA_CLIENT_CERT"):
+            # Agent mTLS (DUVORA_AGENT_MTLS on the server): the certificate names this host.
+            context.load_cert_chain(setting("DUVORA_CLIENT_CERT"), setting("DUVORA_CLIENT_KEY") or None)
+        handlers.append(urllib.request.HTTPSHandler(context=context))
+    return urllib.request.build_opener(*handlers).open(req, timeout=timeout)
 
 
 def decode(response, path):
@@ -88,8 +92,8 @@ def decode(response, path):
     return data
 
 
-def request(url, token, path, body=None, method=None, cookie="", ca_file=None):
-    with open_url(url, path, token, body, method, cookie, ca_file) as response:
+def request(url, token, path, body=None, method=None, cookie="", ca_file=None, timeout=15):
+    with open_url(url, path, token, body, method, cookie, ca_file, timeout) as response:
         return decode(response, path)
 
 
@@ -172,6 +176,54 @@ def build_parser():
     en.add_argument("device"); en.add_argument("--confirm", help="Must be ENFORCE ON <device>")
     ks = sub.add_parser("kill-switch", help="Engage (on) or release (off) the eBPF enforcement kill switch")
     ks.add_argument("state", choices=["on", "off"])
+    sub.add_parser("insights", help="Anomalies, forecasts and new egress destinations (computed locally)")
+    sub.add_parser("forecast", help="Temperature and throughput forecast for a device").add_argument("device")
+    sub.add_parser("suggest", help="Allow-list candidates from a device's observed egress, ranked by coverage").add_argument("device")
+    ex = sub.add_parser("explain", help="Evidence, hypotheses and a written explanation for an incident")
+    ex.add_argument("incident_id"); ex.add_argument("--no-llm", action="store_true", help="Rule-based explanation only")
+    ask = sub.add_parser("ask", help="Ask the ops copilot (needs DUVORA_AI_URL on the server); it never applies changes")
+    ask.add_argument("question", nargs="+")
+    st = sub.add_parser("steering", help="Steering overview, a device's steering state, or a rule set (host-kernel eBPF or simulation)")
+    st.add_argument("device", nargs="?"); st.add_argument("--set", dest="ruleset", help="Show one rule set")
+    st.add_argument("--put", metavar="FILE", help="Create or replace --set from a JSON file ({description, default, rules})")
+    st.add_argument("--delete", action="store_true", help="Delete --set (only when no device uses it)")
+    sp = sub.add_parser("steer", help="Plan a steering rule set on devices (prints the plan unless --confirm)")
+    sp.add_argument("ruleset"); sp.add_argument("devices", nargs="+")
+    sp.add_argument("--stage", default="shadow", choices=["shadow", "enforce"]); sp.add_argument("--confirm")
+    us = sub.add_parser("unsteer", help="Plan removing steering from devices (prints the plan unless --confirm)")
+    us.add_argument("devices", nargs="+"); us.add_argument("--confirm")
+    bp = sub.add_parser("bypass", help="Engage (on) or release (off) steering bypass on a device")
+    bp.add_argument("device"); bp.add_argument("state", choices=["on", "off"])
+    bp.add_argument("--confirm", required=True, help="BYPASS <device> or RESUME <device>"); bp.add_argument("--reason", default="manual")
+    vd = sub.add_parser("verdicts", help="Recent steering verdicts (flow samples)")
+    vd.add_argument("--device"); vd.add_argument("--action", choices=["allow", "inspect", "drop"]); vd.add_argument("--rule"); vd.add_argument("--limit", type=int, default=50)
+    fl = sub.add_parser("flow", help="Which steering rule matches a flow, with an explanation")
+    fl.add_argument("target", help="A device id or, with --set, a rule set id"); fl.add_argument("--set", dest="by_set", action="store_true")
+    fl.add_argument("--direction", default="egress", choices=["ingress", "egress"]); fl.add_argument("--src"); fl.add_argument("--dst")
+    fl.add_argument("--protocol", default="tcp"); fl.add_argument("--sport", type=int); fl.add_argument("--dport", type=int)
+    fl.add_argument("--no-llm", action="store_true")
+    sub.add_parser("steer-suggest", help="Steering rule candidates from a device's observed traffic").add_argument("device")
+    sub.add_parser("budget", help="A device's resource capacity, reservations and headroom").add_argument("device")
+    sub.add_parser("ai-traffic", help="LLM endpoints, providers and findings seen by inspection")
+    af = sub.add_parser("ai-findings", help="Inspection findings (prompt injection, secrets, sensitive data)")
+    af.add_argument("--device"); af.add_argument("--kind"); af.add_argument("--limit", type=int, default=50)
+    asx = sub.add_parser("assets", help="Discovered AI assets; sanction or unsanction them")
+    asx.add_argument("action", nargs="?", default="list", choices=["list", "sanction", "unsanction"])
+    asx.add_argument("--kind"); asx.add_argument("--name"); asx.add_argument("--device"); asx.add_argument("--note", default="")
+    asx.add_argument("--id", help="Sanctioned entry id (unsanction)")
+    sc = sub.add_parser("scan", help="Scan an image or model (server-side), list scans, or scan a local file offline")
+    g = sc.add_mutually_exclusive_group()
+    g.add_argument("--image", help="Digest-pinned image reference"); g.add_argument("--model-url", help="HTTPS URL of a model file")
+    g.add_argument("--file", help="Scan a local file here; nothing is uploaded"); g.add_argument("--id", help="Show one scan")
+    it = sub.add_parser("intel", help="Threat-intel feeds and matches")
+    it.add_argument("action", nargs="?", default="list", choices=["list", "refresh", "add-feed", "remove-feed", "ruleset"])
+    it.add_argument("--feed"); it.add_argument("--url"); it.add_argument("--format", default="plain", choices=["plain", "csv", "stix"])
+    it.add_argument("--id", default="threat-intel", help="Rule set id (ruleset)"); it.add_argument("--base", help="Rule set whose rules follow the intel drops")
+    pb = sub.add_parser("playbooks", help="Response playbooks (draft-only) and their runs")
+    pb.add_argument("action", nargs="?", default="list", choices=["list", "runs", "run", "put", "delete"])
+    pb.add_argument("--id"); pb.add_argument("--incident"); pb.add_argument("--file", help="JSON body (put)")
+    sub.add_parser("siem", help="SIEM export status (admin)").add_argument("--test", action="store_true", help="Send a test event")
+    sub.add_parser("agents", help="Agent identities: tokens, rotation and mTLS (admin)")
     return p
 
 
@@ -240,6 +292,27 @@ def run(args, token):
         return call(f"/api/v1/devices/{quote(args.device)}/ebpf" if args.device else "/api/v1/ebpf")
     if c == "kill-switch":
         return call("/api/v1/ebpf/kill-switch", {"engaged": args.state == "on"})
+    if c == "insights":
+        return call("/api/v1/insights")
+    if c == "forecast":
+        return call(f"/api/v1/devices/{quote(args.device)}/forecast")
+    if c == "suggest":
+        return call(f"/api/v1/devices/{quote(args.device)}/allowlist-suggestions")
+    if c == "explain":
+        return call(f"/api/v1/incidents/{quote(args.incident_id)}/explain" + ("?llm=0" if args.no_llm else ""))
+    if c == "ask":
+        reply = request(args.url, token, "/api/v1/copilot", {"messages": [{"role": "user", "content": " ".join(args.question)}]}, timeout=180)
+        lines = [reply["reply"]]
+        if reply["tools"]:
+            lines.append("\n[tools: " + ", ".join(t["name"] for t in reply["tools"]) + "]")
+        for plan in reply["plans"]:
+            lines.append(f"\nDrafted plan {plan['id']} ({plan['mode']}); review, then: duvoractl apply {plan['id']} --confirm '{plan['confirmation']}'"
+                         + (f"\n  blocked: {'; '.join(plan['blockers'])}" if plan["blockers"] else ""))
+        return "\n".join(lines)
+    if c in {"steering", "steer", "unsteer", "bypass", "verdicts", "flow", "steer-suggest", "budget"}:
+        return run_steering(args, call)
+    if c in {"ai-traffic", "ai-findings", "assets", "scan", "intel", "playbooks", "siem", "agents"}:
+        return run_ai(args, call)
     if c in {"shadow", "enforce"}:
         if c == "shadow":
             policy = {"name": args.name, "tenant": args.tenant, "cidr": args.cidr, "ports": ports_arg(args.ports)}
@@ -257,6 +330,114 @@ def run(args, token):
     return result if c == "status" else result[c]
 
 
+def query(**params):
+    from urllib.parse import urlencode
+    params = {k: v for k, v in params.items() if v not in (None, "")}
+    return "?" + urlencode(params) if params else ""
+
+
+def plan_then_apply(call, spec, confirm):
+    """Create a plan; apply it only when `confirm` is given (the server checks it matches)."""
+    plan = call("/api/v1/plans", spec)
+    if plan["blockers"] or not confirm:
+        return plan
+    return call(f"/api/v1/plans/{quote(plan['id'])}/apply", {"confirmation": confirm})
+
+
+def run_steering(args, call):
+    c = args.command
+    if c == "steering":
+        if args.ruleset:
+            path = f"/api/v1/steering/sets/{quote(args.ruleset)}"
+            if args.put:
+                with open(args.put) as f:
+                    return call(path, json.load(f), "PUT")
+            return call(path, method="DELETE") if args.delete else call(path)
+        if args.put or args.delete:
+            raise ValueError("--put and --delete need --set <rule set id>")
+        return call(f"/api/v1/devices/{quote(args.device)}/steering") if args.device else call("/api/v1/steering")
+    if c == "steer":
+        return plan_then_apply(call, {"action": "steer", "devices": args.devices, "ruleset": args.ruleset, "stage": args.stage}, args.confirm)
+    if c == "unsteer":
+        return plan_then_apply(call, {"action": "unsteer", "devices": args.devices}, args.confirm)
+    if c == "bypass":
+        return call(f"/api/v1/devices/{quote(args.device)}/steering/bypass",
+                    {"engaged": args.state == "on", "confirmation": args.confirm, "reason": args.reason})
+    if c == "verdicts":
+        return call("/api/v1/verdicts" + query(device=args.device, action=args.action, rule=args.rule, limit=args.limit))
+    if c == "flow":
+        flow = {k: v for k, v in {"direction": args.direction, "src": args.src, "dst": args.dst, "protocol": args.protocol,
+                                  "sport": args.sport, "dport": args.dport}.items() if v is not None}
+        body = {"ruleset" if args.by_set else "device": args.target, "flow": flow}
+        return call("/api/v1/steering/explain" + ("?llm=0" if args.no_llm else ""), body)
+    if c == "steer-suggest":
+        return call(f"/api/v1/devices/{quote(args.device)}/steering-suggestions")
+    return call(f"/api/v1/devices/{quote(args.device)}/budget")
+
+
+def run_ai(args, call):
+    c = args.command
+    if c == "ai-traffic":
+        return call("/api/v1/ai-traffic")
+    if c == "ai-findings":
+        return call("/api/v1/ai/findings" + query(device=args.device, kind=args.kind, limit=args.limit))
+    if c == "assets":
+        if args.action == "list":
+            return call("/api/v1/ai/assets")
+        if args.action == "unsanction":
+            if not args.id:
+                raise ValueError("unsanction needs --id (see `duvoractl assets`)")
+            return call(f"/api/v1/ai/sanctioned/{quote(args.id)}", method="DELETE")
+        entry = {k: v for k, v in {"kind": args.kind, "name": args.name, "device": args.device, "note": args.note}.items() if v}
+        return call("/api/v1/ai/sanctioned", entry)
+    if c == "scan":
+        if args.file:
+            from .scanner import scan_file
+            return scan_file(args.file)
+        if args.id:
+            return call(f"/api/v1/scans/{quote(args.id)}")
+        if args.image:
+            return call("/api/v1/scans", {"image": args.image})
+        if args.model_url:
+            return call("/api/v1/scans", {"url": args.model_url})
+        return call("/api/v1/scans")
+    if c == "intel":
+        if args.action == "list":
+            return call("/api/v1/intel")
+        if args.action == "refresh":
+            return call("/api/v1/intel/refresh", {"feed": args.feed} if args.feed else {})
+        if args.action == "ruleset":
+            return call("/api/v1/intel/ruleset", {"id": args.id, **({"base": args.base} if args.base else {})})
+        if not args.feed:
+            raise ValueError("--feed <id> is required")
+        if args.action == "remove-feed":
+            return call(f"/api/v1/intel/feeds/{quote(args.feed)}", method="DELETE")
+        if not args.url:
+            raise ValueError("add-feed needs --url")
+        return call(f"/api/v1/intel/feeds/{quote(args.feed)}", {"url": args.url, "format": args.format}, "PUT")
+    if c == "playbooks":
+        if args.action == "list":
+            return call("/api/v1/playbooks")
+        if args.action == "runs":
+            return call("/api/v1/playbook-runs" + query(incident=args.incident))
+        if not args.id:
+            raise ValueError("--id <playbook> is required")
+        path = f"/api/v1/playbooks/{quote(args.id)}"
+        if args.action == "run":
+            if not args.incident:
+                raise ValueError("run needs --incident")
+            return call(path + "/run", {"incident": args.incident})
+        if args.action == "delete":
+            return call(path, method="DELETE")
+        if not args.file:
+            raise ValueError("put needs --file")
+        with open(args.file) as f:
+            return call(path, json.load(f), "PUT")
+    if c == "siem":
+        return call("/api/v1/siem/test", {}) if args.test else call("/api/v1/siem")
+    return call("/api/v1/agent-identities")
+
+
 def main():
     p = build_parser()
     args = p.parse_args()
@@ -264,6 +445,8 @@ def main():
     try:
         if args.command == "login":
             result = login(args)
+        elif args.command == "scan" and args.file:
+            result = run_ai(args, None)
         else:
             token = setting("DUVORA_TOKEN")
             if not token:

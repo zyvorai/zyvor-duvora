@@ -195,13 +195,44 @@
   font-size: 14px;
 }
 
+.dv-copilot-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 90;
+  box-shadow: var(--shadow-3);
+}
+.dv-copilot {
+  position: fixed;
+  right: 24px;
+  bottom: 84px;
+  z-index: 90;
+  width: min(440px, calc(100vw - 32px));
+  height: min(640px, calc(100vh - 120px));
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  box-shadow: var(--shadow-3);
+}
+.dv-copilot-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.dv-copilot-log { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; margin: 12px 0; }
+.dv-copilot-empty { display: grid; gap: 8px; }
+.dv-copilot-turn p { margin: 0 0 6px; white-space: pre-wrap; line-height: 1.45; }
+.dv-copilot-turn.user { align-self: flex-end; max-width: 85%; padding: 10px 14px; border-radius: var(--radius-lg); background: var(--fill-tertiary); }
+.dv-copilot-turn.assistant { max-width: 100%; }
+.dv-copilot-input { display: flex; gap: 8px; }
+.dv-copilot-input input { flex: 1; min-width: 0; }
+.dv-hyp { display: grid; gap: 10px; margin: 12px 0; }
+.dv-hyp p { margin: 4px 0 0; color: var(--text-secondary); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
 @media (max-width: 900px) {
   .grid { grid-template-columns: minmax(0, 1fr); }
   .span2, .span3 { grid-column: auto; }
 }
 
 @media print {
-  .nav, .dv-footer, .kit-section__actions, .dv-toast, .dv-notice { display: none !important; }
+  .nav, .dv-footer, .kit-section__actions, .dv-toast, .dv-notice, .dv-copilot-fab, .dv-copilot { display: none !important; }
   main { padding: 0; }
   .card { break-inside: avoid; box-shadow: none; }
 }

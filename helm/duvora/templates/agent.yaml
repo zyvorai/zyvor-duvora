@@ -50,6 +50,15 @@ spec:
             {{- if not .Values.agent.isolation }}
             - --no-isolation
             {{- end }}
+            {{- if not .Values.agent.steering }}
+            - --no-steering
+            {{- end }}
+            {{- if not .Values.agent.aiDiscovery }}
+            - --no-ai-discovery
+            {{- end }}
+            {{- if not .Values.agent.tokenRotation }}
+            - --no-token-rotation
+            {{- end }}
           env:
             - name: DUVORA_HOST
               valueFrom:
@@ -112,7 +121,7 @@ spec:
         - name: tracefs
           hostPath:
             path: /sys/kernel/tracing
-        # Operators create /run/duvora/isolation-off on the host to turn isolation off locally.
+        # Operators create /run/duvora/isolation-off or /run/duvora/steering-off on the host to turn either off locally.
         - name: override
           hostPath:
             path: /run/duvora

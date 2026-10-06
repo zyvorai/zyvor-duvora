@@ -54,14 +54,40 @@ def host_token(path, host):
     return token if isinstance(token, str) else ""
 
 
-def start_ebpf(args, token):
-    """Load the native sensors and node isolation. Returns an EbpfAgent, or None when unavailable in auto mode."""
+class Credential:
+    """The agent's bearer: the host-bound bootstrap key, exchanged for a short-lived token (POST /agent/token)
+    and rotated at half its lifetime. Falls back to the bootstrap key against servers without tokens."""
+
+    def __init__(self, url, bootstrap, rotate=True):
+        self.url, self.bootstrap, self.rotate = url, bootstrap, rotate
+        self.token, self.rotate_after, self.supported = "", 0.0, rotate
+
+    def current(self, now=None):
+        now = now or time.time()
+        if self.supported and (not self.token or now >= self.rotate_after):
+            try:
+                out = request(self.url, self.token or self.bootstrap, "/api/v1/agent/token", {})
+                self.token, self.rotate_after = out["token"], float(out["rotate_after"])
+            except OSError as exc:
+                if "404" in str(exc) or "405" in str(exc):
+                    self.supported = False
+                elif self.token and "401" in str(exc):
+                    self.token = ""  # expired: mint again from the bootstrap key next time
+                if not self.token:
+                    return self.bootstrap
+        return self.token or self.bootstrap
+
+
+def start_ebpf(args, credential):
+    """Load the native sensors, node isolation and steering. Returns an EbpfAgent, or None when unavailable in auto mode."""
     try:
         from .bpf.libbpf import Libbpf
         from .bpf.nodeiso import NodeIsolation
         from .bpf.runtime import EbpfAgent
         from .bpf.sensors import Sensors, uplinks
+        from .bpf.steer import Steering
         from .bpf import OBJ_DIR
+        from .aiassets import discover as discover_assets
         bpf = Libbpf()
         interfaces = uplinks(args.interfaces)
         sensors = Sensors(bpf, interfaces, args.ebpf)
@@ -78,10 +104,17 @@ def start_ebpf(args, token):
             if args.ebpf == "required":
                 raise SystemExit(f"node isolation unavailable: {exc}")
             why = str(exc)[:200]
-    call = lambda method, path, body: request(args.url, token, path, body, method=method)
+    steering, steer_why = None, "disabled with --no-steering" if args.no_steering else ""
+    if not args.no_steering:
+        try:
+            steering = Steering(bpf, OBJ_DIR / "duvora_steer.o", [socket.if_nametoindex(i) for i in interfaces])
+        except OSError as exc:
+            steer_why = str(exc)[:200]
+    call = lambda method, path, body: request(args.url, credential.current(), path, body, method=method)
     print(json.dumps({"ebpf": "loaded", "interfaces": interfaces, "programs": sensors.attached,
-                      "unavailable": sensors.unavailable, "isolation": why or "attached"}), flush=True)
-    return EbpfAgent(args.host, args.url, call, sensors, isolation, why)
+                      "unavailable": sensors.unavailable, "isolation": why or "attached", "steering": steer_why or "attached"}), flush=True)
+    return EbpfAgent(args.host, args.url, call, sensors, isolation, why, steering=steering, steering_error=steer_why,
+                     discover_assets=None if args.no_ai_discovery else discover_assets)
 
 
 def main():
@@ -96,6 +129,12 @@ def main():
     p.add_argument("--interfaces", default=os.environ.get("DUVORA_EBPF_INTERFACES", ""),
                    help="comma-separated interfaces (default: those carrying a default route)")
     p.add_argument("--no-isolation", action="store_true", default=os.environ.get("DUVORA_EBPF_ISOLATION") == "off")
+    p.add_argument("--no-steering", action="store_true", default=os.environ.get("DUVORA_EBPF_STEERING") == "off",
+                   help="do not load duvora_steer (host-kernel traffic steering)")
+    p.add_argument("--no-ai-discovery", action="store_true", default=os.environ.get("DUVORA_AI_DISCOVERY") == "off",
+                   help="do not report local AI services found in /proc")
+    p.add_argument("--no-token-rotation", action="store_true", default=os.environ.get("DUVORA_AGENT_ROTATE") == "off",
+                   help="use the bootstrap key directly instead of short-lived agent tokens")
     args = p.parse_args()
     if args.interval < 0 or (args.interval and args.interval < 10):
         p.error("Interval must be zero or at least 10 seconds")
@@ -104,13 +143,14 @@ def main():
         p.error("Set DUVORA_TOKEN to a host-bound agent key")
     if args.ebpf != "off" and not args.interval:
         args.interval = 15
-    ebpf = start_ebpf(args, token) if args.ebpf != "off" else None
+    credential = Credential(args.url, token, rotate=not args.no_token_rotation and bool(token))
+    ebpf = start_ebpf(args, credential) if args.ebpf != "off" else None
     while True:
         reports = discover(host=args.host, site=args.site)
         if args.submit:
             for report in reports:
                 try:
-                    request(args.url, token, "/api/v1/reports", report)
+                    request(args.url, credential.current(), "/api/v1/reports", report)
                 except OSError as exc:
                     print(json.dumps({"report": report["id"], "error": str(exc)}), flush=True)
             print(json.dumps({"submitted": len(reports), "host": args.host}), flush=True)
@@ -119,6 +159,7 @@ def main():
         if ebpf:
             applied = ebpf.step()
             print(json.dumps({"ebpf": "reported", "isolation": applied["mode"], "demoted": applied["demoted"],
+                              "steering": ebpf.steer_applied["mode"], "steering_demoted": ebpf.steer_applied["demoted"],
                               "errors": ebpf.errors[-3:]}), flush=True)
         if not args.interval:
             break

@@ -12,7 +12,7 @@ duvora/bpf/obj/%.o: bpf/%.c bpf/duvora_bpf.h
 	@mkdir -p duvora/bpf/obj
 	$(CLANG) -O2 -g -Wall -target bpf -I$(BPF_ARCH_INCLUDE) -c $< -o $@
 bpf-test: bpf
-	sudo DUVORA_BPF_TESTS=1 $(PYTHON) -m unittest tests.test_bpf_kernel -v
+	sudo DUVORA_BPF_TESTS=1 $(PYTHON) -m unittest tests.test_bpf_kernel tests.test_steer_kernel -v
 
 demo:
 	$(PYTHON) -m duvora.server --demo

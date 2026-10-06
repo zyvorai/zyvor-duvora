@@ -4,7 +4,7 @@ import { Badge, Section, Table, severityTone } from '../components/kit';
 import { useFleet, useResource } from '../store';
 import type { AlertRule } from '../types';
 
-const KIND = {
+const KIND: Record<string, string> = {
   metric: 'Metric threshold',
   health: 'Reported health',
   stale: 'Observation age (s)',
@@ -12,6 +12,21 @@ const KIND = {
   ebpf: 'eBPF sensor',
   isolation: 'Shadow would-block',
   'isolation-enforce': 'Enforced drops',
+  anomaly: 'Baseline deviation (z-score)',
+  'new-destination': 'New egress destination',
+  forecast: 'Forecast horizon (hours)',
+  'steering-bypass': 'Steering bypass (minutes)',
+  'steering-drop': 'Enforced steering drops',
+  'steering-would-drop': 'Shadow steering would-drop',
+  'llm-prompt-injection': 'Prompt injection to an LLM',
+  'llm-secret-leak': 'Secret sent to an LLM',
+  'llm-sensitive-data': 'Personal data sent to an LLM',
+  'llm-new-endpoint': 'New LLM endpoint',
+  'unsanctioned-ai': 'Unsanctioned AI service',
+  'intel-match': 'Threat-intel match',
+  'scan-failed': 'Artifact scan failed',
+  'agent-identity-stale': 'Agent token lapsing (hours)',
+  'agent-identity-unknown': 'Unknown agent identity',
 };
 
 export default function AlertRules() {
@@ -40,7 +55,7 @@ export default function AlertRules() {
                 <small className="dv-sub dv-mono">{r.id}</small>
               </td>
               <td>
-                {KIND[r.kind]}
+                {KIND[r.kind] || r.kind}
                 {r.metric && <small className="dv-sub dv-mono">{r.metric}</small>}
               </td>
               <td>

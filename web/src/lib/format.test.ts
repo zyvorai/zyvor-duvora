@@ -2,7 +2,20 @@ import { describe, expect, it } from 'vitest';
 import { errorMessage } from '../api';
 import { scoreTone, healthTone, severityTone } from '../components/kit';
 import { layout } from '../pages/Topology';
-import { ago, bytes, metric, parsePorts, policyModeLabel, providerLabel, remaining, sourceLabel } from './format';
+import { ago, bytes, eta, metric, parsePorts, percent, policyModeLabel, providerLabel, remaining, sourceLabel, zLabel } from './format';
+
+describe('insight labels', () => {
+  it('formats coverage, forecast ETAs and z-scores', () => {
+    expect(percent(0.9989)).toBe('99.9%');
+    expect(percent(1)).toBe('100%');
+    expect(eta(null)).toBe('Not trending toward it');
+    expect(eta(0.25)).toBe('15m');
+    expect(eta(5.54)).toBe('5.5 h');
+    expect(eta(72)).toBe('3 d');
+    expect(zLabel(5.2)).toBe('5.2σ above');
+    expect(zLabel(-4)).toBe('4σ below');
+  });
+});
 
 describe('format', () => {
   it('labels sources', () => {

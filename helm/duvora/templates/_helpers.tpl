@@ -24,6 +24,16 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- if or .Values.agent.existingSecret .Values.agent.keys }}true{{ end -}}
 {{- end -}}
 
+{{- define "duvora.integrationsSecretName" -}}
+{{- .Values.integrationsSecret | default (printf "%s-integrations" .Release.Name) -}}
+{{- end -}}
+
+{{- define "duvora.integrationsEnabled" -}}
+{{- with .Values -}}
+{{- if or .integrationsSecret .siem.key .siem.caCert .notify.key .notify.caCert .scan.registryToken .scan.caCert .intel.caCert .agentIdentity.agentCaCert }}true{{ end -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "duvora.tlsSecretName" -}}
 {{- .Values.tls.existingSecret | default (printf "%s-tls" .Release.Name) -}}
 {{- end -}}

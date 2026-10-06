@@ -82,7 +82,7 @@ class HTTPTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'HTTPS'):request('http://example.com','token','/api/v1/snapshot')
 
     def test_export_round_trip(self):
-        self.assertEqual(self.call('/api/v1/export')['version'],'0.4.0')
+        self.assertEqual(self.call('/api/v1/export')['version'],'0.5.0')
 
     def test_unknown_endpoint(self):
         with self.assertRaises(urllib.error.HTTPError) as exc:self.call('/api/v1/unknown')
