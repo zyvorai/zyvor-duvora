@@ -18,9 +18,9 @@
 
 **One server, one API, one CLI and one console for DPU inventory, service plans, tenant isolation models, operational telemetry, incidents and change evidence.** A native eBPF agent adds kernel telemetry and node isolation in shadow or leased enforce mode, and the whole workflow runs on four simulated BlueField devices before you touch hardware.
 
-**Zero runtime dependencies** · **4 simulated BlueField DPUs** · **Native eBPF agent** · **Shadow before enforce** · **Audit trail for every change**
+**Zero runtime dependencies** · **4 simulated BlueField DPUs** · **Native eBPF agent** · **Traffic steering** · **AI security** · **Shadow before enforce**
 
-[**Quickstart**](#quickstart) · [**Deploy**](#deploy) · [**API**](docs/API.md) · [**Operations**](docs/OPERATIONS.md) · [**Status**](docs/STATUS.md) · [**License**](#license-and-support)
+[**Quickstart**](#quickstart) · [**Steering**](docs/STEERING.md) · [**AI**](docs/AI.md) · [**Deploy**](#deploy) · [**API**](docs/API.md) · [**Operations**](docs/OPERATIONS.md) · [**Status**](docs/STATUS.md) · [**License**](#license-and-support)
 
 </div>
 
@@ -55,8 +55,24 @@ Full history: [CHANGELOG.md](CHANGELOG.md).
 | You need node isolation but cannot risk cutting off SSH or the controller | Shadow first, enforce only after a shadow run of the same allow-list, leased enforcement, a kill switch, an agent fail-safe and a local override file |
 | Kernel telemetry means running another vendor's agent on every node | Duvora's own TCX and tracepoint programs, loaded by the agent through libbpf, with Netra as an optional alternative source |
 | Hardware facts live in a dozen places | Read-only Linux PCI discovery and a read-only NVIDIA DPF import that can never overwrite simulator identities or grant enforcement |
+| You need to inspect or block traffic per node, without waiting for a DPU offload project | Ordered steering rules in the host kernel (`duvora_steer`): shadow verdicts first, leased enforce, bypass on demand, rollback to the previous rule set |
+| Prompts, keys and customer data flow to LLM APIs and nobody notices | LLM traffic inspection, shadow-AI discovery, artifact scans and an AI posture score; playbooks draft the block plan, a human applies it |
 
-![Capabilities at a glance: Inventory, Change, eBPF, Govern](docs/ux/readme-capabilities.jpg)
+![Capabilities at a glance: Inventory, Change, eBPF, Govern, Steering, AI security](docs/ux/readme-capabilities.jpg)
+
+---
+
+## Traffic steering
+
+![Traffic steering: first-match rules, four outcomes, shadow before enforce](docs/ux/readme-steering.jpg)
+
+A rule set is an ordered list of 5-tuple rules (up to 1,000), each ending in **bypass**, **allow**, **inspect** or **drop**, with a default for unmatched traffic. A `steer` plan replays recent flows against the new set before anything changes. Shadow counts verdicts and would-drops per rule; enforce is leased and falls back to shadow on its own. SSH and the control plane are always exempt, `BYPASS <device>` takes a node out of the path, and rollback restores the previous set in shadow. On agent nodes it runs in the host kernel as `duvora_steer` (TCX); on modeled DPUs it runs in simulation. It is not DPU offload. [Steering guide →](docs/STEERING.md)
+
+## AI security
+
+![AI security: AI traffic, shadow AI, artifact scans, threat intel, draft-only playbooks, AI posture](docs/ux/readme-ai-security.jpg)
+
+Steering's **inspect** action samples the start of each flow. The analyzer classifies LLM providers and self-hosted inference servers, flags prompt injection, secrets and personal data, and opens incidents with redacted snippets. Around it: shadow-AI discovery on every node, image and model scans that can gate deploys, threat-intel feeds you can turn into a drop rule set, playbooks that **draft** plans, and an AI posture score in the shift briefing. The optional copilot answers fleet questions with read-only tools and never applies a change. [AI guide →](docs/AI.md)
 
 ---
 
@@ -87,10 +103,14 @@ Duvora is not a DPF replacement: it reads DPF's DPU objects and adds the operato
 flowchart TD
     Console["React console"] --> API["Authenticated HTTP API"]
     CLI["duvoractl"] --> API
-    Agent["Linux PCI / DPF bridges"] --> API
+    Bridges["Linux PCI / DPF bridges"] --> API
+    Agent["duvora-agent (eBPF)"] -->|"telemetry, verdicts, payload samples"| API
+    API -->|"isolation and steering rules"| Agent
+    Agent --> Steer["duvora_steer + duvora_nodeiso (host kernel)"]
+    Copilot["Copilot (optional LLM)"] -->|"read-only tools, draft plans"| API
     API --> Store["SQLite state and audit"]
-    Worker["Reconciler, alerts, housekeeping"] --> Store
-    Store --> Model["Users, inventory, plans, jobs, incidents"]
+    Worker["Reconciler, alerts, AI analysis, playbooks"] --> Store
+    Store --> Model["Users, inventory, plans, jobs, steering, findings, incidents"]
 ```
 
 The control plane keeps observations separate from simulated desired state. Physical reports cannot overwrite simulator identities or grant enforcement capabilities. Plans bind to their creator, expire in five minutes, and capture device revisions. Apply is idempotent and refuses conflicting jobs. Job progress survives restart; rollback refuses to overwrite later device changes.
@@ -130,6 +150,25 @@ The console uses the Zyvor Netra design language — the same sign-in screen, me
 **Ask copilot** (bottom right) answers questions about the fleet when a language model is configured.
 
 Select a device in **DPU fleet**, open **Isolation**, create a policy, preview it, and apply the simulation. Watch the job complete in **Operations**. Test an allowed and denied destination, then roll back the job. Viewers see everything with write controls disabled.
+
+### See the console
+
+<table>
+<tr>
+<td width="50%"><img src="docs/ux/console-overview.jpg" alt="Overview: fleet pulse, DPU fleet and active incidents" width="100%"><br><sub><b>Overview</b>: fleet pulse, devices and active incidents</sub></td>
+<td width="50%"><img src="docs/ux/console-steering.jpg" alt="Steering: rule sets, packets inspected, would-drop counters and a rule test" width="100%"><br><sub><b>Steering</b>: rule sets, shadow verdicts and "which rule wins?"</sub></td>
+</tr>
+<tr>
+<td><img src="docs/ux/console-ai-traffic.jpg" alt="AI traffic: LLM endpoints, prompt-injection findings and inspection coverage" width="100%"><br><sub><b>AI traffic</b>: LLM endpoints, findings and inspection coverage</sub></td>
+<td><img src="docs/ux/console-threats.jpg" alt="Threats: threat-intel matches, feeds and artifact scans" width="100%"><br><sub><b>Threats</b>: intel matches, feeds and artifact scans</sub></td>
+</tr>
+<tr>
+<td><img src="docs/ux/console-report.jpg" alt="Report: shift briefing with AI posture checks" width="100%"><br><sub><b>Report</b>: shift briefing with the AI posture score</sub></td>
+<td><img src="docs/ux/console-services.jpg" alt="Services: deployed services and per-device resource headroom" width="100%"><br><sub><b>Services</b>: deployments and resource headroom</sub></td>
+</tr>
+</table>
+
+Screenshots come from the demo server; regenerate them with `node docs/ux/build-console-shots.cjs`, and the cards with `./docs/ux/build-readme-cards.sh`.
 
 ## CLI
 
@@ -213,7 +252,7 @@ node tests/e2e.cjs                    # Playwright workflow against a running de
 | `helm/duvora`, `scripts/deploy-*.sh` | Helm chart and remote deploy |
 | `tests/` | Unit, HTTP integration, browser workflow suite |
 | `deploy/` | Plain Kubernetes and DPF observer RBAC templates |
-| `docs/` | Plan, limits, integration, API, operations, validation |
+| `docs/` | Plan, limits, integration, API, operations, steering, AI, validation; README cards and screenshots in `docs/ux/` and `docs/social/` |
 
 ---
 

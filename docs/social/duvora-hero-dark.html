@@ -26,8 +26,9 @@
   .tag em { font-style:normal; color:var(--signal); }
   .lede { margin:12px 0 0; font-size:18px; line-height:1.45; color:#b8b8bf; width:520px; text-shadow:0 1px 12px #000; }
   .stats { margin-top:24px; display:flex; gap:32px; }
+  .stat { min-width:92px; }
   .stat b { display:block; font-size:34px; font-weight:800; letter-spacing:-.03em; color:#fff; }
-  .stat span { font-family:var(--mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:#8e8e93; }
+  .stat span { white-space:nowrap; font-family:var(--mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:#8e8e93; }
   .pill { position:absolute; left:60px; bottom:40px; display:flex; gap:10px; z-index:3; }
   .pill span { font-family:var(--mono); font-size:13.5px; font-weight:700; padding:7px 13px; border-radius:18px; border:1.5px solid rgba(255,255,255,.2); color:#e5e5ea; background:rgba(0,0,0,.6); }
   .pill span.b { background:var(--blue); border-color:var(--blue); color:#fff; box-shadow:0 0 24px rgba(0,113,227,.55); }
@@ -52,8 +53,8 @@
   <div class="brand"><svg viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><defs><linearGradient id="zb" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ff5a15"/><stop offset="1" stop-color="#cc420a"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="url(#zb)"/><path d="M18.5,20.5 45.5,20.5 18.5,43.5 45.5,43.5" fill="none" stroke="#fff" stroke-width="8.3" stroke-linecap="round" stroke-linejoin="round"/></svg><b>Zyvor</b><span>&middot;</span><span>DPU fleet control plane</span></div>
   <div class="word">Duvora</div>
   <div class="tag">Plans, isolation, evidence.<br><em>In your control.</em></div>
-  <div class="lede">One server, API, CLI, and console for DPU inventory, service plans, tenant isolation, telemetry, incidents, and change evidence.</div>
-  <div class="stats"><div class="stat"><b>0</b><span>runtime deps</span></div><div class="stat"><b>4</b><span>simulated DPUs</span></div><div class="stat"><b>eBPF</b><span>native agent</span></div></div>
+  <div class="lede">One server, API, CLI, and console for DPU inventory, service plans, tenant isolation, traffic steering, AI security, incidents, and change evidence.</div>
+  <div class="stats"><div class="stat"><b>0</b><span>runtime deps</span></div><div class="stat"><b>4</b><span>simulated DPUs</span></div><div class="stat"><b>eBPF</b><span>steering</span></div><div class="stat"><b>AI</b><span>copilot</span></div></div>
 </div>
 <div class="pill"><span class="b">github.com/zyvorai/zyvor-duvora</span><span>Apache-2.0</span></div>
 <script>
