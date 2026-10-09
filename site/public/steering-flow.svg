@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 360" role="img" aria-label="Traffic steering: packets are matched against ordered rules and routed to bypass, allow, inspect or drop">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b0b0d"/><stop offset="1" stop-color="#16161a"/></linearGradient>
+<filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;fill:#f5f5f7}.s{font-size:13px;fill:#a1a1a6}.h{font-size:15px;font-weight:600}</style>
+</defs>
+<rect width="960" height="360" rx="20" fill="url(#bg)"/>
+<text x="40" y="44" class="h" style="font-size:20px">Traffic steering</text>
+<text x="40" y="66" class="s">First match wins. Shadow counts verdicts, enforce is leased.</text>
+<!-- paths -->
+<g fill="none" stroke-width="2" stroke-dasharray="4 6" stroke-linecap="round">
+<path d="M70 190 H420" stroke="#48484a"/>
+<path d="M420 190 C520 190 540 90 700 90 H830" stroke="#30d5c8"/>
+<path d="M420 190 C520 190 560 160 700 160 H830" stroke="#2997ff"/>
+<path d="M420 190 C520 190 560 230 700 230 H830" stroke="#ff9f0a"/>
+<path d="M420 190 C520 190 540 300 700 300 H830" stroke="#ff453a"/>
+</g>
+<!-- rule gate -->
+<rect x="330" y="120" width="180" height="140" rx="16" fill="#1c1c1e" stroke="#2997ff" stroke-opacity=".6"/>
+<text x="420" y="148" text-anchor="middle" class="h">Rule set</text>
+<g class="s" text-anchor="middle" style="white-space:pre" xml:space="preserve"><text x="420" y="176">1  tcp :22     bypass</text><text x="420" y="196">2  10.0.0.0/8  allow</text><text x="420" y="216">3  any :443    inspect</text><text x="420" y="236">4  default     drop</text></g>
+<rect x="340" y="164" width="160" height="22" rx="6" fill="#2997ff" fill-opacity=".0"><animate attributeName="y" values="164;184;204;224;164" dur="8s" repeatCount="indefinite"/><animate attributeName="fill-opacity" values=".18;.18;.18;.18;.18" dur="8s" repeatCount="indefinite"/></rect>
+<!-- lanes -->
+<g class="h"><text x="840" y="95" style="fill:#30d5c8">bypass</text><text x="840" y="165" style="fill:#2997ff">allow</text><text x="840" y="235" style="fill:#ff9f0a">inspect</text><text x="840" y="305" style="fill:#ff453a">drop</text></g>
+<text x="40" y="195" class="s">flows</text>
+<!-- packets -->
+<g filter="url(#glow)">
+<circle r="6" fill="#f5f5f7"><animateMotion dur="4s" repeatCount="indefinite" begin="0s" path="M70 190 H420 C520 190 540 90 700 90 H830"/><animate attributeName="fill" values="#f5f5f7;#f5f5f7;#30d5c8;#30d5c8" keyTimes="0;.45;.5;1" dur="4s" repeatCount="indefinite" begin="0s"/></circle>
+<circle r="6" fill="#f5f5f7"><animateMotion dur="4s" repeatCount="indefinite" begin="1s" path="M70 190 H420 C520 190 560 160 700 160 H830"/><animate attributeName="fill" values="#f5f5f7;#f5f5f7;#2997ff;#2997ff" keyTimes="0;.45;.5;1" dur="4s" repeatCount="indefinite" begin="1s"/></circle>
+<circle r="6" fill="#f5f5f7"><animateMotion dur="4s" repeatCount="indefinite" begin="2s" path="M70 190 H420 C520 190 560 230 700 230 H830"/><animate attributeName="fill" values="#f5f5f7;#f5f5f7;#ff9f0a;#ff9f0a" keyTimes="0;.45;.5;1" dur="4s" repeatCount="indefinite" begin="2s"/></circle>
+<circle r="6" fill="#f5f5f7"><animateMotion dur="4s" repeatCount="indefinite" begin="3s" path="M70 190 H420 C520 190 540 300 700 300 H830"/><animate attributeName="fill" values="#f5f5f7;#f5f5f7;#ff453a;#ff453a" keyTimes="0;.45;.5;1" dur="4s" repeatCount="indefinite" begin="3s"/></circle>
+</g>
+<text x="40" y="338" class="s">SSH and the control plane are always exempt. Rollback restores the previous set in shadow.</text>
+</svg>
