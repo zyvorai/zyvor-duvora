@@ -12,7 +12,7 @@
 
 [![Book a demo](https://img.shields.io/badge/Book_a_demo-0071e3?style=for-the-badge)](https://zyvor.dev/schedule?utm_source=github&utm_medium=duvora&utm_campaign=readme_hero)
 [![30-day PoC](https://img.shields.io/badge/30--day_PoC-000000?style=for-the-badge)](https://zyvor.dev/poc?utm_source=github&utm_medium=duvora&utm_campaign=readme_hero)
-[![Live site](https://img.shields.io/badge/Live_site-30d5c8?style=for-the-badge)](https://zyvorai.github.io/duvora/)
+[![Live site](https://img.shields.io/badge/Live_site-30d5c8?style=for-the-badge)](https://zyvorai.github.io/zyvor-duvora/)
 
 <img src="docs/ux/anim/hero.gif" alt="Duvora console: steering, AI traffic, threats and the shift briefing" width="100%">
 
@@ -21,7 +21,7 @@ Run the whole workflow on four simulated BlueField DPUs before the hardware arri
 
 **Zero runtime dependencies** · **Shadow before enforce** · **Native eBPF agent** · **Revision-guarded rollback** · **Apache-2.0**
 
-[**Quickstart**](#quickstart) · [**Live site**](https://zyvorai.github.io/duvora/) · [**Steering**](docs/STEERING.md) · [**AI**](docs/AI.md) · [**API**](docs/API.md) · [**Operations**](docs/OPERATIONS.md)
+[**Quickstart**](#quickstart) · [**Live site**](https://zyvorai.github.io/zyvor-duvora/) · [**Steering**](docs/STEERING.md) · [**AI**](docs/AI.md) · [**API**](docs/API.md) · [**Operations**](docs/OPERATIONS.md)
 
 </div>
 
@@ -90,7 +90,7 @@ Duvora is not a DPF replacement: it reads DPF's DPU objects and adds the operato
 ## Quickstart
 
 ```bash
-git clone https://github.com/zyvorai/duvora.git && cd duvora
+git clone https://github.com/zyvorai/zyvor-duvora.git && cd zyvor-duvora
 make web && python3 -m duvora.server --demo
 ```
 
@@ -115,6 +115,6 @@ Free and open source under [Apache-2.0](LICENSE) (see [NOTICE](NOTICE)). **Zyvor
 [![Book a demo](https://img.shields.io/badge/Book_a_demo-0071e3?style=for-the-badge)](https://zyvor.dev/schedule?utm_source=github&utm_medium=duvora&utm_campaign=readme_footer)
 [![30-day PoC](https://img.shields.io/badge/Start_a_30--day_PoC-000000?style=for-the-badge)](https://zyvor.dev/poc?utm_source=github&utm_medium=duvora&utm_campaign=readme_footer)
 [![Pricing](https://img.shields.io/badge/Pricing-1d1d1f?style=for-the-badge)](https://zyvor.dev/pricing?utm_source=github&utm_medium=duvora&utm_campaign=readme_footer)
-[![Star on GitHub](https://img.shields.io/github/stars/zyvorai/duvora?style=for-the-badge&logo=github&label=Star&color=2997ff)](https://github.com/zyvorai/duvora)
+[![Star on GitHub](https://img.shields.io/github/stars/zyvorai/zyvor-duvora?style=for-the-badge&logo=github&label=Star&color=2997ff)](https://github.com/zyvorai/zyvor-duvora)
 
 </div>

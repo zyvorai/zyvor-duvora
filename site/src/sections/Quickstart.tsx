@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 const TABS: Record<string, string> = {
-  'Run it': `git clone https://github.com/zyvorai/duvora.git && cd duvora
+  'Run it': `git clone https://github.com/zyvorai/zyvor-duvora.git && cd zyvor-duvora
 make web
 python3 -m duvora.server --demo
 # open http://127.0.0.1:8787  ·  admin / Admin@321`,
