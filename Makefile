@@ -1,4 +1,4 @@
-.PHONY: demo run test check package install web web-dev web-test deploy deploy-docker helm-lint bpf bpf-test
+.PHONY: site demo run test check package install web web-dev web-test deploy deploy-docker helm-lint bpf bpf-test
 PYTHON ?= python3
 NPM ?= npm
 HOST ?=
@@ -23,6 +23,9 @@ test:
 web:
 	$(NPM) --prefix web ci --no-audit --no-fund
 	$(NPM) --prefix web run build
+site:
+	$(NPM) --prefix site ci --no-audit --no-fund
+	$(NPM) --prefix site run build
 web-dev:
 	$(NPM) --prefix web run dev
 web-test:
