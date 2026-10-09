@@ -14,6 +14,8 @@
 [![30-day PoC](https://img.shields.io/badge/30--day_PoC-000000?style=for-the-badge)](https://zyvor.dev/poc?utm_source=github&utm_medium=duvora&utm_campaign=readme_hero)
 [![Live site](https://img.shields.io/badge/Live_site-30d5c8?style=for-the-badge)](https://zyvorai.github.io/zyvor-duvora/)
 
+<img src="docs/social/duvora-hero-dark.jpg" alt="Duvora - Plans, isolation, evidence. In your control." width="100%">
+
 <img src="docs/ux/anim/hero.gif" alt="Duvora console: steering, AI traffic, threats and the shift briefing" width="100%">
 
 **One server, one API, one CLI and one console for DPU inventory, traffic steering, AI security and change evidence.**
