@@ -6,5 +6,6 @@ export const links = {
   demo: `https://zyvor.dev/schedule?${utm('site_hero')}`,
   poc: `https://zyvor.dev/poc?${utm('site_hero')}`,
   pricing: `https://zyvor.dev/pricing?${utm('site_footer')}`,
+  donate: 'https://rzp.io/rzp/utwdYh3',
   sales: 'mailto:sales@zyvor.dev?subject=Duvora',
 };

@@ -106,6 +106,10 @@ Open **http://127.0.0.1:8787** and sign in as **admin / Admin@321**. Four simula
 
 **[Netra](https://github.com/zyvorai/zyvor-netra)** eBPF network observability · **[Gryvia](https://github.com/zyvorai/zyvor-gryvia)** Kubernetes GPU platform · **[Rivora](https://github.com/zyvorai/zyvor-rivora)** eBPF L4 load balancer · [zyvor.dev](https://zyvor.dev)
 
+## Support
+
+Free under Apache-2.0. If it helps you, you can donate any amount you like: <https://rzp.io/rzp/utwdYh3>. A donation is voluntary and supports development and maintenance. It is not a purchase: it buys no support, SLA, features, priority or license, and it is not tax-deductible (Zyvor AI Labs Private Limited is a company, not a charity). Zyvor Enterprise (supported releases, SLAs, a named contact and enterprise features) is separate: sales@zyvor.dev.
+
 ## License and support
 
 Free and open source under [Apache-2.0](LICENSE) (see [NOTICE](NOTICE)). **Zyvor Enterprise** adds supported releases, upgrade guidance, priority incident triage, a named technical contact and 24x7 critical intake: [plans](docs/SUBSCRIPTION-MODEL.md) · [pricing](https://zyvor.dev/pricing?utm_source=github&utm_medium=duvora&utm_campaign=readme_license) · [sales@zyvor.dev](mailto:sales@zyvor.dev) · [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md)
