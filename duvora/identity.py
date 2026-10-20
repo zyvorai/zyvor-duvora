@@ -19,6 +19,8 @@ AGENT_TOKEN_PREFIX = "dva_"
 MAX_TOKENS_PER_HOST = 3
 REJECTION_WINDOW = 900
 TOUCH_INTERVAL = 60
+UNKNOWN_RETENTION = 86400
+UNKNOWN_MAX = 1000
 
 
 def token_ttl():
@@ -136,7 +138,13 @@ class IdentityMixin:
         return {"identities": out, "mtls": self.mtls_mode, "bootstrap_only": self.bootstrap_only, "token_ttl": token_ttl()}
 
     def prune_identity(self, now):
-        return self.db.execute("DELETE FROM agent_tokens WHERE expires<?", (now,)).rowcount
+        removed = self.db.execute("DELETE FROM agent_tokens WHERE expires<?", (now,)).rowcount
+        # Rows for refused bearers (unknown@<client>) are keyed by remote address: age them out and cap their number.
+        removed += self.db.execute("DELETE FROM agent_identity WHERE host LIKE 'unknown@%' AND COALESCE(json_extract(body,'$.last_seen'),0)<?",
+                                   (now - UNKNOWN_RETENTION,)).rowcount
+        removed += self.db.execute("DELETE FROM agent_identity WHERE host IN (SELECT host FROM agent_identity WHERE host LIKE 'unknown@%' "
+                                   "ORDER BY COALESCE(json_extract(body,'$.last_seen'),0) DESC LIMIT -1 OFFSET ?)", (UNKNOWN_MAX,)).rowcount
+        return removed
 
     def identity_conditions(self):
         def stale(rule, now, firing):

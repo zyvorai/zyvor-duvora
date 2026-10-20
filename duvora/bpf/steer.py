@@ -177,9 +177,10 @@ class Steering:
 
     def drain_payloads(self, limit=100):
         items = self.bpf.items(self.fds["steer_payloads"], FLOW_KEY.size, PAYLOAD.size)
+        items = items[:limit]  # entries beyond the limit stay in the map for the next drain
         for k, _ in items:
             self.bpf.delete(self.fds["steer_payloads"], k)
-        return [decode_payload(k, v) for k, v in items[:limit]]
+        return [decode_payload(k, v) for k, v in items]
 
     def close(self):
         self.obj.close()

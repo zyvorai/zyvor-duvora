@@ -7,6 +7,7 @@ import os
 import re
 import socket
 import time
+import urllib.error
 from pathlib import Path
 
 from .cli import request
@@ -68,10 +69,11 @@ class Credential:
             try:
                 out = request(self.url, self.token or self.bootstrap, "/api/v1/agent/token", {})
                 self.token, self.rotate_after = out["token"], float(out["rotate_after"])
-            except OSError as exc:
-                if "404" in str(exc) or "405" in str(exc):
+            except (OSError, ValueError, KeyError, TypeError) as exc:
+                code = exc.code if isinstance(exc, urllib.error.HTTPError) else None
+                if code in {404, 405}:
                     self.supported = False
-                elif self.token and "401" in str(exc):
+                elif self.token and code == 401:
                     self.token = ""  # expired: mint again from the bootstrap key next time
                 if not self.token:
                     return self.bootstrap
@@ -151,7 +153,7 @@ def main():
             for report in reports:
                 try:
                     request(args.url, credential.current(), "/api/v1/reports", report)
-                except OSError as exc:
+                except (OSError, ValueError) as exc:
                     print(json.dumps({"report": report["id"], "error": str(exc)}), flush=True)
             print(json.dumps({"submitted": len(reports), "host": args.host}), flush=True)
         elif args.ebpf == "off":
