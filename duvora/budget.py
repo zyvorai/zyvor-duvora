@@ -51,6 +51,9 @@ def budget_blockers(d, service, resources):
     used = usage(d.get("services") or [], replacing=service)
     out = []
     for k, want in resources.items():
+        if k not in cap:
+            out.append(f"{d['id']}: {k.replace('_', ' ')} capacity is unknown, so that request cannot be checked")
+            continue
         free = cap[k] - reserved.get(k, 0) - used[k]
         if want > free:
             out.append(f"{d['id']}: {service} needs {want} {k.replace('_', ' ')} but {round(free, 2)} are free "
@@ -66,6 +69,6 @@ class BudgetMixin:
         services = d.get("services") or []
         used = usage(services)
         return {"device": device_id, "model": d.get("model"), "capacity": cap, "reserved": reserved, "used": used,
-                "free": {k: round(cap[k] - reserved.get(k, 0) - used[k], 2) for k in RESOURCES} if cap else None,
+                "free": {k: round(cap[k] - reserved.get(k, 0) - used[k], 2) for k in RESOURCES if k in cap} if cap else None,
                 "services": [{"name": s["name"], "state": s.get("state"), "resources": s.get("resources") or {}} for s in services],
                 "source": "reported" if isinstance(d.get("capacity"), dict) else "model specification" if cap else "unknown"}

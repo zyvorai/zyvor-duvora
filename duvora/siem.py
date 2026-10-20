@@ -131,7 +131,9 @@ class SiemExporter:
                         self._syslog(batch)
                 except (urllib.error.URLError, OSError, ValueError) as exc:
                     with self.lock:
-                        self.queue.extendleft(reversed(batch[:self.queue.maxlen - len(self.queue)]))
+                        keep = batch[:self.queue.maxlen - len(self.queue)]
+                        self.queue.extendleft(reversed(keep))
+                        self.stats["dropped"] += len(batch) - len(keep)
                         self.stats.update(errors=self.stats["errors"] + 1, last_error=f"{type(exc).__name__}: {getattr(exc, 'reason', exc)}"[:200])
                     break
                 sent += len(batch)
