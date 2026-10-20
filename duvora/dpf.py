@@ -33,14 +33,18 @@ def main():
     p.add_argument("--submit", action="store_true")
     p.add_argument("--url", default=os.environ.get("DUVORA_URL", "http://127.0.0.1:8787"))
     args = p.parse_args()
-    proc = subprocess.run(["kubectl", "--context", args.context, "--namespace", args.namespace,
-        "--request-timeout=15s", "get", "dpus.provisioning.dpu.nvidia.com", "-o", "json"],
-        capture_output=True, text=True, timeout=20, check=True)
+    token = os.environ.get("DUVORA_TOKEN", "")
+    if args.submit and not token:
+        p.error("Set DUVORA_TOKEN to the bridge's host-bound agent key")
+    try:
+        proc = subprocess.run(["kubectl", "--context", args.context, "--namespace", args.namespace,
+            "--request-timeout=15s", "get", "dpus.provisioning.dpu.nvidia.com", "-o", "json"],
+            capture_output=True, text=True, timeout=20, check=True)
+    except (OSError, subprocess.SubprocessError) as exc:
+        detail = (getattr(exc, "stderr", "") or str(exc)).strip()[:300]
+        raise SystemExit(f"kubectl failed: {detail}")
     reports = convert(json.loads(proc.stdout)["items"], args.host, args.site)
     if args.submit:
-        token = os.environ.get("DUVORA_TOKEN", "")
-        if not token:
-            p.error("Set DUVORA_TOKEN to the bridge's host-bound agent key")
         for report in reports:
             request(args.url, token, "/api/v1/reports", report)
     print(json.dumps(reports, indent=2))
