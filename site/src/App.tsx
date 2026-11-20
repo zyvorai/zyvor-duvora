@@ -5,7 +5,6 @@ import Hero from './sections/Hero';
 import Stats from './sections/Stats';
 import Features from './sections/Features';
 import RuleDemo from './sections/RuleDemo';
-import Compare from './sections/Compare';
 import Gallery from './sections/Gallery';
 import Quickstart from './sections/Quickstart';
 import Support from './sections/Support';
@@ -21,7 +20,6 @@ export default function App() {
         <div className="nav-links">
           <a href="#features">Features</a>
           <a href="#try">Try it</a>
-          <a href="#compare">vs DPF</a>
           <a href="#start">Quickstart</a>
           <a href="#support">Support</a>
           <a className="btn btn-sm" href={REPO}>GitHub</a>
@@ -32,7 +30,6 @@ export default function App() {
         <Stats />
         <Features />
         <RuleDemo />
-        <Compare />
         <Gallery />
         <Quickstart />
         <Support />
