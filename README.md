@@ -112,7 +112,7 @@ Free under Apache-2.0. If it helps you, you can donate any amount you like: <htt
 
 ## License and support
 
-Free and open source under [Apache-2.0](LICENSE) (see [NOTICE](NOTICE)). **Zyvor Enterprise** adds supported releases, upgrade guidance, priority incident triage, a named technical contact and 24x7 critical intake: [plans](docs/SUBSCRIPTION-MODEL.md) · [pricing](https://zyvor.dev/pricing?utm_source=github&utm_medium=duvora&utm_campaign=readme_license) · [sales@zyvor.dev](mailto:sales@zyvor.dev) · [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md)
+Free and open source under [Apache-2.0](LICENSE) (see [NOTICE](NOTICE)). **Zyvor Enterprise** adds supported releases, upgrade guidance, priority incident triage, a named technical contact and 24x7 critical intake: [plans](docs/SUBSCRIPTION-MODEL.md) · [pricing](https://zyvor.dev/pricing?utm_source=github&utm_medium=duvora&utm_campaign=readme_license) · [sales@zyvor.dev](mailto:sales@zyvor.dev) · [buy / get a quote](https://zyvor.dev/buy). Support from USD 600 per node per year (INR 59,999 incl. GST in India) · [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md)
 
 <div align="center">
 
