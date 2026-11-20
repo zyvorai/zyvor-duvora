@@ -11,9 +11,9 @@ Teams that want supported releases and defined response targets can buy an annua
 | Supported | Standard plus priority queue and incident triage | Business hours, faster response |
 | Enterprise | Supported plus a named technical contact and 24x7 critical intake | One-hour initial response target for critical issues |
 
-Support is sized per managed DPU, with an annual minimum per plan. 
+Support is sized per node on the Zyvor Support meter, with an annual minimum per plan. 
 
-Rates are quoted by Zyvor: contact [sales@zyvor.dev](mailto:sales@zyvor.dev).
+Prices are in the [Pricing](#pricing) section below; custom pricing: contact [sales@zyvor.dev](mailto:sales@zyvor.dev).
 
 ## Terms
 
@@ -23,3 +23,18 @@ Rates are quoted by Zyvor: contact [sales@zyvor.dev](mailto:sales@zyvor.dev).
 - At expiry, updates, downloads and support end. Open-source rights, where they apply, continue under the licence.
 - Response targets need a contracted scope and are not uptime guarantees.
 - Existing signed agreements keep their agreed terms.
+
+## Pricing
+
+Duvora is free under Apache-2.0. Paid support runs on the single Zyvor Support meter, per node per year (one meter, no stacking per product).
+
+| Plan | Elsewhere (USD, excl. tax) | India (INR, incl. 18% GST) | Minimum |
+|---|---|---|---|
+| Supported (business hours) | USD 600 per node per year | INR 59,999 per node per year | USD 3,000 / INR 299,995 (5 nodes) |
+| Supported Plus (24x7 Sev-1/2) | USD 1,200 per node per year | INR 119,999 per node per year | USD 6,000 / INR 599,995 (5 nodes) |
+
+Volume: 256-499 nodes -10%, 500-999 -15%, 1,000 and above -20%. Multi-year: 2 years -5%, 3 years -10%; volume and multi-year together are capped at 25%. Minimums are annual contract values and apply after discounts.
+
+Prices: INR incl. 18% GST in India; US dollars excl. tax elsewhere (VAT, GST or sales tax added where applicable). Pay online by UPI, card or netbanking where a buy page exists; international cards work (charged in rupees); or request a US-dollar invoice by bank transfer. Custom pricing: contact [sales@zyvor.dev](mailto:sales@zyvor.dev).
+
+Trial: start with a 30-day PoC at [zyvor.dev/poc](https://zyvor.dev/poc); production licences come with a 30-day trial key. Buy / get a quote: [zyvor.dev/buy](https://zyvor.dev/buy).
