@@ -1,6 +1,6 @@
 # Duvora: support subscriptions
 
-Duvora is source-available software under the Zyvor Production License v1.0. A commercial license is required to run it.
+Duvora is source-available software under the Zyvor Production License v1.0. Non-production use is free; production use requires a commercial license.
 
 Teams that want supported releases and defined response targets can buy an annual **support subscription** from Zyvor.
 
@@ -25,7 +25,7 @@ Prices are in the [Pricing](#pricing) section below; custom pricing: contact [sa
 
 ## Pricing
 
-Duvora requires a commercial license under the Zyvor Production License v1.0. Paid support runs on the single Zyvor Support meter, per node per year (one meter, no stacking per product).
+Production use of Duvora requires a commercial license under the Zyvor Production License v1.0. Paid support runs on the single Zyvor Support meter, per node per year (one meter, no stacking per product).
 
 | Plan | Elsewhere (USD, excl. tax) | India (INR, incl. 18% GST) | Minimum |
 |---|---|---|---|
