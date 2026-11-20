@@ -63,4 +63,4 @@ Acceptance: HA failover without duplicate hardware execution, tenant authorizati
 
 ## Commercial packaging proposal
 
-Use one product with optional capabilities rather than a separate application per function. Community/evaluation can provide read-only inventory and local simulation. A future supported enterprise edition can include qualified provisioning, isolation, fleet upgrades, SSO, HA, and audit retention. Price hardware operations per managed physical DPU, with support tiers after measuring deployment effort. No pricing or production-support commitment is established by this release.
+Use one product with optional capabilities rather than a separate application per function. The evaluation build can provide read-only inventory and local simulation. A future supported enterprise edition can include qualified provisioning, isolation, fleet upgrades, SSO, HA, and audit retention. Price hardware operations per managed physical DPU, with support tiers after measuring deployment effort. No pricing or production-support commitment is established by this release.

@@ -59,14 +59,14 @@
 
   <!-- license / stack pills -->
   <g font-family="'Helvetica Neue',Helvetica,Arial,sans-serif">
-    <rect x="72" y="424" width="114" height="34" rx="17" fill="#f5f5f7" stroke="#d2d2d7"/>
-    <text x="129.0" y="446" text-anchor="middle" font-size="14.5" font-weight="600" font-family="'Menlo','JetBrains Mono',monospace" fill="#1d1d1f">Zyvor PL 1.0</text>
-    <rect x="198" y="424" width="132" height="34" rx="17" fill="#f5f5f7" stroke="#d2d2d7"/>
-    <text x="264.0" y="446" text-anchor="middle" font-size="14.5" font-weight="600" font-family="'Menlo','JetBrains Mono',monospace" fill="#1d1d1f">Python 3.11+</text>
-    <rect x="342" y="424" width="132" height="34" rx="17" fill="#f5f5f7" stroke="#d2d2d7"/>
-    <text x="408.0" y="446" text-anchor="middle" font-size="14.5" font-weight="600" font-family="'Menlo','JetBrains Mono',monospace" fill="#1d1d1f">React + Vite</text>
-    <rect x="486" y="424" width="114" height="34" rx="17" fill="#f5f5f7" stroke="#d2d2d7"/>
-    <text x="543.0" y="446" text-anchor="middle" font-size="14.5" font-weight="600" font-family="'Menlo','JetBrains Mono',monospace" fill="#1d1d1f">k3s / Helm</text>
+    <rect x="72" y="424" width="132" height="34" rx="17" fill="#f5f5f7" stroke="#d2d2d7"/>
+    <text x="138.0" y="446" text-anchor="middle" font-size="14.5" font-weight="600" font-family="'Menlo','JetBrains Mono',monospace" fill="#1d1d1f">Zyvor PL 1.0</text>
+    <rect x="216" y="424" width="132" height="34" rx="17" fill="#f5f5f7" stroke="#d2d2d7"/>
+    <text x="282.0" y="446" text-anchor="middle" font-size="14.5" font-weight="600" font-family="'Menlo','JetBrains Mono',monospace" fill="#1d1d1f">Python 3.11+</text>
+    <rect x="360" y="424" width="132" height="34" rx="17" fill="#f5f5f7" stroke="#d2d2d7"/>
+    <text x="426.0" y="446" text-anchor="middle" font-size="14.5" font-weight="600" font-family="'Menlo','JetBrains Mono',monospace" fill="#1d1d1f">React + Vite</text>
+    <rect x="504" y="424" width="114" height="34" rx="17" fill="#f5f5f7" stroke="#d2d2d7"/>
+    <text x="561.0" y="446" text-anchor="middle" font-size="14.5" font-weight="600" font-family="'Menlo','JetBrains Mono',monospace" fill="#1d1d1f">k3s / Helm</text>
   </g>
 
   <!-- control plane fans out to the DPU fleet -->
