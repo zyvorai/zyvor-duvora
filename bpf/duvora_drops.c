@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
 //
 // Kernel drop reasons: counts kfree_skb by its `reason` argument. The agent
 // names the reasons from the tracepoint's format (enum skb_drop_reason).

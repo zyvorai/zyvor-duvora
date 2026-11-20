@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
 //
 // Interface counters and egress destinations, attached at TCX ingress and
 // egress of the agent's uplinks. Observe only: always TC_ACT_UNSPEC (next).
