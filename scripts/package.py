@@ -1,3 +1,6 @@
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 """Create source archives without keys, databases, build output, or bytecode."""
 import hashlib
 import re

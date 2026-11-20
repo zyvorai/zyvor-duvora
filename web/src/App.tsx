@@ -1,3 +1,6 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import { AUTH_EXPIRED, api, signOut } from './api';
 import Copilot from './components/Copilot';

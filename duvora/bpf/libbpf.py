@@ -1,3 +1,6 @@
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 """Thin ctypes bindings to the system libbpf (1.3 or later, for TCX links)."""
 import ctypes
 import ctypes.util

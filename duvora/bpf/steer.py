@@ -1,3 +1,6 @@
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 """Traffic steering: encode a rule set into duvora_steer's maps, publish it by generation, read
 counters, and drain flow samples and inspected payloads.
 

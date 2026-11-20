@@ -1,3 +1,6 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 import { useState } from 'react';
 import { api } from '../api';
 import { Badge, Empty, Metrics, Section, Table, severityTone } from '../components/kit';

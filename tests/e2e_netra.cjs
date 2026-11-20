@@ -1,3 +1,6 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 /* Netra node-isolation workflow against a demo server wired to tests/fake_netra.py:
    FAKE_NETRA_PORT=18870 python3 tests/fake_netra.py &
    DUVORA_NETRA_URL=http://127.0.0.1:18870 DUVORA_NETRA_API_KEY=netra-test-key-0123456789abcdef \

@@ -1,3 +1,6 @@
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 """Regressions: agent credential errors, steering payload drain, unknown-agent rows, DPF bridge kubectl failure."""
 import io
 import subprocess

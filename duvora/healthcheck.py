@@ -1,3 +1,6 @@
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 """Container health probe: GET /healthz on loopback, over TLS when the server serves TLS."""
 import os
 import ssl

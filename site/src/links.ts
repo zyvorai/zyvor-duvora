@@ -1,3 +1,6 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 export const REPO = 'https://github.com/zyvorai/zyvor-duvora';
 const utm = (c: string) => `utm_source=github&utm_medium=duvora&utm_campaign=${c}`;
 

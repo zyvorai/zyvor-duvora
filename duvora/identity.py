@@ -1,3 +1,6 @@
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 """Agent identity: short-lived, rotating agent tokens and optional mutual TLS binding a client
 certificate to the agent's host. Bootstrap host keys (DUVORA_AGENT_KEYS) can be restricted to minting
 tokens with DUVORA_AGENT_BOOTSTRAP_ONLY=1, so a leaked long-lived key cannot report or read policy."""

@@ -1,3 +1,6 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 import { useEffect, useRef, useState } from 'react';
 import type { Theme } from '../theme';
 import { navGroups, type Page } from '../lib/navGroups';

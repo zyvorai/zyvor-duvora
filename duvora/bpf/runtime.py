@@ -1,3 +1,6 @@
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 """The agent's native eBPF loop: report counters, pull desired isolation, apply it with local safety.
 
 Safety is local and does not depend on the control plane:

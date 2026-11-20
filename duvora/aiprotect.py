@@ -1,3 +1,6 @@
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 """AI traffic protection on the control plane: LLM endpoints seen by inspection, threat findings
 (prompt injection, secrets, personal data) and their alert rules. Inspection never blocks; blocking is
 a drop steering rule the operator adds through a reviewed plan."""

@@ -1,3 +1,6 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 // The console session is an HttpOnly cookie set by the control plane. No
 // password or bearer is written to localStorage or sessionStorage: those are
 // readable by any script on the page.

@@ -1,3 +1,6 @@
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 """Response playbooks: when an incident opens, run ordered steps that only prepare a response —
 explain it, draft a steering plan that drops the offending peer, preview bypass, notify a webhook.
 

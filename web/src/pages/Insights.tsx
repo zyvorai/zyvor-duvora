@@ -1,3 +1,6 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 import { Badge, Empty, Metrics, Section, Table } from '../components/kit';
 import { ago, bytes, eta, metric, zLabel } from '../lib/format';
 import { useFleet, useResource } from '../store';

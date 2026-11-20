@@ -1,3 +1,6 @@
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 """Threat-intelligence feeds: IP/CIDR and domain indicators from a URL or pasted inline, matched against
 observed flows and inspected server names, and turned into a drop steering rule set on request.
 

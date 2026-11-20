@@ -1,3 +1,6 @@
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 """Kernel tests for duvora_steer. Linux only, as root, with DUVORA_BPF_TESTS=1 (make bpf-test).
 Verdicts run through BPF_PROG_TEST_RUN; no interface is attached."""
 import unittest

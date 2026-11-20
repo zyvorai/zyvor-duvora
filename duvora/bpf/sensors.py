@@ -1,3 +1,6 @@
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 """Load Duvora's observe-only eBPF sensors and read them into the summary shape of netra.summarize()."""
 import ipaddress
 import os

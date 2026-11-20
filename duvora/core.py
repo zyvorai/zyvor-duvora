@@ -1,3 +1,6 @@
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 """Durable control plane. Hardware observations and simulated intent stay separate."""
 import hashlib
 import ipaddress

@@ -1,3 +1,6 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 // Capture a console walk-through on a throwaway demo server and convert it to docs/ux/anim/hero.gif.
 // Needs a built console (make web), Google Chrome, ffmpeg, and Playwright:
 //   npm install --no-save playwright@1.63.0 && node docs/ux/build-hero-gif.cjs

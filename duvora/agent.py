@@ -1,3 +1,6 @@
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 """Host agent: read-only Linux PCI discovery and, with --ebpf, Duvora's native eBPF sensors and node
 isolation (duvora/bpf). No privileged subprocesses or hardware writes."""
 import argparse

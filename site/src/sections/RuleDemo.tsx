@@ -1,3 +1,6 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 import { useMemo, useState } from 'react';
 
 type Rule = { proto: string; port: number | null; net: string; action: 'bypass' | 'allow' | 'inspect' | 'drop' };

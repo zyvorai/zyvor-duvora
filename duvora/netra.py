@@ -1,3 +1,6 @@
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 """Read-mostly bridge to a Netra controller: eBPF telemetry, drop reasons, TCP events, flows,
 capability probes, and (when Netra supports it) node-scoped isolation in shadow or enforce mode."""
 import json

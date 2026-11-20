@@ -1,3 +1,6 @@
+// Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 const ROWS = [
   ['Role', 'Operator workspace: inventory, plans, isolation, incidents, evidence', 'Provisioning and orchestration of BlueField DPUs and services'],
   ['Try without hardware', 'Yes, four simulated BlueField devices', 'Needs BlueField DPUs'],

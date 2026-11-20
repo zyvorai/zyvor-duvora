@@ -1,3 +1,6 @@
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+
 """Export audit events, incidents, steering verdicts, AI findings and threat-intel matches to a SIEM:
 a JSON webhook (DUVORA_SIEM_URL) and/or syslog RFC 5424 (DUVORA_SIEM_SYSLOG=udp|tcp|tls://host:port).
 
