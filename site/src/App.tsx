@@ -36,7 +36,7 @@ export default function App() {
         <Cta />
       </main>
       <footer className="foot">
-        Apache-2.0 · <a href={REPO}>GitHub</a> · <a href="#support">Support</a> · <a href="https://zyvor.dev">zyvor.dev</a> · A Zyvor AI Labs project. Duvora 0.5.0 is a runnable evaluation release; see the <a href={`${REPO}/blob/main/docs/STATUS.md`}>capability matrix</a>.
+        Zyvor Production License · <a href={REPO}>GitHub</a> · <a href="#support">Support</a> · <a href="https://zyvor.dev">zyvor.dev</a> · A Zyvor AI Labs project. Duvora 0.5.0 is a runnable evaluation release; see the <a href={`${REPO}/blob/main/docs/STATUS.md`}>capability matrix</a>.
       </footer>
     </>
   );

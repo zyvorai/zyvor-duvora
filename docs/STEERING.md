@@ -79,7 +79,7 @@ SSH (port 22), and the control plane's address on the agent's control-plane port
 
 ## Kernel program
 
-`bpf/duvora_steer.c` (Apache-2.0) uses these maps:
+`bpf/duvora_steer.c` (Zyvor Production License v1.0) uses these maps:
 
 - `steer_cfg`: generation, mode, rule count and flags.
 - `steer_rules`: two halves of 1,000 rules. The agent writes the inactive half, then publishes the next generation, so an update is atomic.

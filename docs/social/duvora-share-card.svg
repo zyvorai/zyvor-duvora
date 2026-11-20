@@ -1,5 +1,5 @@
 <!-- Copyright 2026 Zyvor AI Labs. -->
-<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0 -->
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Duvora — Infrastructure. In your control. DPU fleet control plane: plans, isolation, telemetry, incidents and evidence. Evaluation release, simulation-first.">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="630" gradientUnits="userSpaceOnUse">
@@ -60,7 +60,7 @@
   <!-- license / stack pills -->
   <g font-family="'Helvetica Neue',Helvetica,Arial,sans-serif">
     <rect x="72" y="424" width="114" height="34" rx="17" fill="#f5f5f7" stroke="#d2d2d7"/>
-    <text x="129.0" y="446" text-anchor="middle" font-size="14.5" font-weight="600" font-family="'Menlo','JetBrains Mono',monospace" fill="#1d1d1f">Apache-2.0</text>
+    <text x="129.0" y="446" text-anchor="middle" font-size="14.5" font-weight="600" font-family="'Menlo','JetBrains Mono',monospace" fill="#1d1d1f">Zyvor PL 1.0</text>
     <rect x="198" y="424" width="132" height="34" rx="17" fill="#f5f5f7" stroke="#d2d2d7"/>
     <text x="264.0" y="446" text-anchor="middle" font-size="14.5" font-weight="600" font-family="'Menlo','JetBrains Mono',monospace" fill="#1d1d1f">Python 3.11+</text>
     <rect x="342" y="424" width="132" height="34" rx="17" fill="#f5f5f7" stroke="#d2d2d7"/>
@@ -101,5 +101,5 @@
   <!-- footer -->
   <line x1="72" y1="560" x2="1128" y2="560" stroke="#e5e5ea" stroke-width="1"/>
   <text x="72" y="596" font-family="'Menlo','JetBrains Mono',monospace" font-size="16" fill="#6e6e73">github.com/zyvorai/duvora</text>
-  <text x="1128" y="596" text-anchor="end" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif" font-size="16" fill="#6e6e73">Apache License 2.0</text>
+  <text x="1128" y="596" text-anchor="end" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif" font-size="16" fill="#6e6e73">Zyvor Production License v1.0</text>
 </svg>

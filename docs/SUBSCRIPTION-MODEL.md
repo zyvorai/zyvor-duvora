@@ -1,6 +1,6 @@
 # Duvora: support subscriptions
 
-Duvora is open-source software. It is free to use under its open-source licence, and that does not change.
+Duvora is source-available software under the Zyvor Production License v1.0. Non-production use is free; production use requires a commercial license.
 
 Teams that want supported releases and defined response targets can buy an annual **support subscription** from Zyvor.
 
@@ -20,13 +20,13 @@ Prices are in the [Pricing](#pricing) section below; custom pricing: contact [sa
 - Annual prepaid subscription is the default, with a 12-month minimum. Multi-year prepay is available.
 - Minimums apply after any discounts.
 - Implementation, migration, training and managed operations are separate services.
-- At expiry, updates, downloads and support end. Open-source rights, where they apply, continue under the licence.
+- At expiry, updates, downloads and support end. Rights under the Zyvor Production License v1.0 continue per its terms.
 - Response targets need a contracted scope and are not uptime guarantees.
 - Existing signed agreements keep their agreed terms.
 
 ## Pricing
 
-Duvora is free under Apache-2.0. Paid support runs on the single Zyvor Support meter, per node per year (one meter, no stacking per product).
+Non-production use of Duvora is free under the Zyvor Production License v1.0. Paid support runs on the single Zyvor Support meter, per node per year (one meter, no stacking per product).
 
 | Plan | Elsewhere (USD, excl. tax) | India (INR, incl. 18% GST) | Minimum |
 |---|---|---|---|

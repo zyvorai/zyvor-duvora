@@ -4,7 +4,7 @@
 
 **Plans, isolation, evidence. In your control.**
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-0071e3?style=flat-square&labelColor=1d1d1f)](LICENSE)
+[![License: Zyvor Production 1.0](https://img.shields.io/badge/License-Zyvor_Production_1.0-1d1d1f.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11+-0071e3?style=flat-square&labelColor=1d1d1f&logo=python&logoColor=white)](https://www.python.org/)
 [![React](https://img.shields.io/badge/React-Vite-0071e3?style=flat-square&labelColor=1d1d1f&logo=react&logoColor=white)](web/)
 [![Helm](https://img.shields.io/badge/Helm-k3s-0071e3?style=flat-square&labelColor=1d1d1f&logo=helm&logoColor=white)](helm/duvora)
@@ -21,7 +21,7 @@
 **One server, one API, one CLI and one console for DPU inventory, traffic steering, AI security and change evidence.**
 Run the whole workflow on four simulated BlueField DPUs before the hardware arrives.
 
-**Zero runtime dependencies** · **Shadow before enforce** · **Native eBPF agent** · **Revision-guarded rollback** · **Apache-2.0**
+**Zero runtime dependencies** · **Shadow before enforce** · **Native eBPF agent** · **Revision-guarded rollback** · **Zyvor Production License v1.0**
 
 [**Quickstart**](#quickstart) · [**Live site**](https://zyvor.dev/duvora) · [**Steering**](docs/STEERING.md) · [**AI**](docs/AI.md) · [**API**](docs/API.md) · [**Operations**](docs/OPERATIONS.md)
 
@@ -108,11 +108,11 @@ Open **http://127.0.0.1:8787** and sign in as **admin / Admin@321**. Four simula
 
 ## Support
 
-Free under Apache-2.0. If it helps you, you can donate any amount you like: <https://rzp.io/rzp/utwdYh3>. A donation is voluntary and supports development and maintenance. It is not a purchase: it buys no support, SLA, features, priority or license, and it is not tax-deductible (Zyvor AI Labs Private Limited is a company, not a charity). Zyvor Enterprise (supported releases, SLAs, a named contact and enterprise features) is separate: sales@zyvor.dev.
+Non-production use is free under the Zyvor Production License v1.0; production use requires a commercial license (sales@zyvor.dev). If it helps you, you can donate any amount you like: <https://rzp.io/rzp/utwdYh3>. A donation is voluntary and supports development and maintenance. It is not a purchase: it buys no support, SLA, features, priority or license, and it is not tax-deductible (Zyvor AI Labs Private Limited is a company, not a charity). Zyvor Enterprise (supported releases, SLAs, a named contact and enterprise features) is separate: sales@zyvor.dev.
 
 ## License and support
 
-Free and open source under [Apache-2.0](LICENSE) (see [NOTICE](NOTICE)). **Zyvor Enterprise** adds supported releases, upgrade guidance, priority incident triage, a named technical contact and 24x7 critical intake: [plans](docs/SUBSCRIPTION-MODEL.md) · [pricing](https://zyvor.dev/pricing?utm_source=github&utm_medium=duvora&utm_campaign=readme_license) · [sales@zyvor.dev](mailto:sales@zyvor.dev) · [buy / get a quote](https://zyvor.dev/buy). Support from USD 600 per node per year (INR 59,999 incl. GST in India) · [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md)
+Source-available under the **[Zyvor Production License v1.0](LICENSE)** (SPDX `LicenseRef-Zyvor-Production-1.0`; see [NOTICE](NOTICE)). Non-production use is free; production use requires a commercial license from Zyvor AI Labs ([zyvor.dev/buy](https://zyvor.dev/buy), 30-day trial key available). **Zyvor Enterprise** adds supported releases, upgrade guidance, priority incident triage, a named technical contact and 24x7 critical intake: [plans](docs/SUBSCRIPTION-MODEL.md) · [pricing](https://zyvor.dev/pricing?utm_source=github&utm_medium=duvora&utm_campaign=readme_license) · [sales@zyvor.dev](mailto:sales@zyvor.dev) · [buy / get a quote](https://zyvor.dev/buy). Support from USD 600 per node per year (INR 59,999 incl. GST in India) · [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md)
 
 <div align="center">
 
