@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.db
+*.db-wal
+*.db-shm
+.venv/
+build/
+dist/
+*.egg-info/
+node_modules/
+.env
+keys.json
+test-results/
+duvora/static/
+web/node_modules/

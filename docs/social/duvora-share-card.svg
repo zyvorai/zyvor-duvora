@@ -1,0 +1,105 @@
+<!-- Copyright 2026 Zyvor AI Labs. -->
+<!-- SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0 -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Duvora — Infrastructure. In your control. DPU fleet control plane: plans, isolation, telemetry, incidents and evidence. Evaluation release, simulation-first.">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f5f5f7"/>
+    </linearGradient>
+    <radialGradient id="wash" cx="930" cy="300" r="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0071e3" stop-opacity="0.10"/>
+      <stop offset="0.6" stop-color="#0071e3" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#0071e3" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0071e3"/>
+      <stop offset="1" stop-color="#2997ff"/>
+    </linearGradient>
+    <linearGradient id="blueText" x1="72" y1="0" x2="620" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0071e3"/>
+      <stop offset="1" stop-color="#2997ff"/>
+    </linearGradient>
+    <linearGradient id="wire" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0071e3" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#0071e3" stop-opacity="0.35"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-30%" width="140%" height="190%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8"/>
+      <feOffset dy="7" result="b"/>
+      <feColorMatrix in="b" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.10 0" result="s"/>
+      <feMerge><feMergeNode in="s"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow" x="-30%" y="-40%" width="160%" height="200%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="13"/>
+      <feOffset dy="11" result="b"/>
+      <feColorMatrix in="b" type="matrix" values="0 0 0 0 0.0  0 0 0 0 0.35  0 0 0 0 0.9  0 0 0 0.30 0" result="s"/>
+      <feMerge><feMergeNode in="s"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#wash)"/>
+
+  <!-- Zyvor mark (blue) -->
+  <rect x="72" y="56" width="56" height="56" rx="13" fill="url(#blue)"/>
+  <path d="M86.5 70 113.5 70 86.5 98 113.5 98" fill="none" stroke="#ffffff" stroke-width="7"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- evaluation note -->
+  <text x="144" y="90" font-family="'Menlo','JetBrains Mono',monospace" font-size="13.5" font-weight="700" letter-spacing="1.5"
+        fill="#6e6e73">EVALUATION RELEASE · SIMULATION-FIRST</text>
+
+  <!-- wordmark + tagline -->
+  <text x="68" y="218" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif" font-size="104" font-weight="700" letter-spacing="-4" fill="#1d1d1f">Duvora</text>
+  <text x="72" y="262" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif" font-size="30" font-weight="600" letter-spacing="-0.4"
+        fill="url(#blueText)">Infrastructure.</text>
+  <text x="72" y="296" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif" font-size="30" font-weight="600" letter-spacing="-0.4"
+        fill="url(#blueText)">In your control.</text>
+  <text x="72" y="330" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif" font-size="15.5" fill="#6e6e73">DPU fleet control plane: plans, isolation, telemetry, incidents, evidence.</text>
+
+  <!-- license / stack pills -->
+  <g font-family="'Helvetica Neue',Helvetica,Arial,sans-serif">
+    <rect x="72" y="424" width="132" height="34" rx="17" fill="#f5f5f7" stroke="#d2d2d7"/>
+    <text x="138.0" y="446" text-anchor="middle" font-size="14.5" font-weight="600" font-family="'Menlo','JetBrains Mono',monospace" fill="#1d1d1f">Zyvor PL 1.0</text>
+    <rect x="216" y="424" width="132" height="34" rx="17" fill="#f5f5f7" stroke="#d2d2d7"/>
+    <text x="282.0" y="446" text-anchor="middle" font-size="14.5" font-weight="600" font-family="'Menlo','JetBrains Mono',monospace" fill="#1d1d1f">Python 3.11+</text>
+    <rect x="360" y="424" width="132" height="34" rx="17" fill="#f5f5f7" stroke="#d2d2d7"/>
+    <text x="426.0" y="446" text-anchor="middle" font-size="14.5" font-weight="600" font-family="'Menlo','JetBrains Mono',monospace" fill="#1d1d1f">React + Vite</text>
+    <rect x="504" y="424" width="114" height="34" rx="17" fill="#f5f5f7" stroke="#d2d2d7"/>
+    <text x="561.0" y="446" text-anchor="middle" font-size="14.5" font-weight="600" font-family="'Menlo','JetBrains Mono',monospace" fill="#1d1d1f">k3s / Helm</text>
+  </g>
+
+  <!-- control plane fans out to the DPU fleet -->
+  <g fill="none" stroke="url(#wire)" stroke-width="2.5" stroke-linecap="round">
+    <path d="M872 315 C 900 315, 900 221, 894 221"/>
+    <path d="M872 315 C 900 315, 900 315, 894 315"/>
+    <path d="M872 315 C 900 315, 900 409, 894 409"/>
+  </g>
+  <g fill="#0071e3">
+    <circle cx="872" cy="315" r="5.5"/>
+        <circle cx="894" cy="221" r="4.5"/>
+    <circle cx="894" cy="315" r="4.5"/>
+    <circle cx="894" cy="409" r="4.5"/>
+  </g>
+  <rect x="632" y="258" width="240" height="114" rx="26" fill="url(#blue)" filter="url(#glow)"/>
+  <text x="752" y="304" text-anchor="middle" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif" font-size="22" font-weight="700" fill="#ffffff">Duvora Control</text>
+  <text x="752" y="328" text-anchor="middle" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif" font-size="22" font-weight="700" fill="#ffffff">Plane</text>
+  <text x="752" y="353" text-anchor="middle" font-family="'Menlo','JetBrains Mono',monospace" font-size="12" fill="#dcecff">plans · isolation · audit</text>
+  <g font-family="'Helvetica Neue',Helvetica,Arial,sans-serif">
+    <rect x="906" y="184" width="222" height="74" rx="16" fill="#ffffff" stroke="#0071e3" stroke-opacity="0.75" stroke-width="1.5" filter="url(#shadow)"/>
+      <text x="928" y="214" font-size="20" font-weight="700" fill="#1d1d1f">bf3-01</text>
+      <text x="928" y="237" font-size="13.5" font-family="'Menlo','JetBrains Mono',monospace" fill="#6e6e73">BlueField-3 · pune</text>
+    <circle cx="1106" cy="206" r="5" fill="#ff6a2a"/>
+    <rect x="906" y="278" width="222" height="74" rx="16" fill="#ffffff" stroke="#d2d2d7" filter="url(#shadow)"/>
+      <text x="928" y="308" font-size="20" font-weight="700" fill="#1d1d1f">bf3-02</text>
+      <text x="928" y="331" font-size="13.5" font-family="'Menlo','JetBrains Mono',monospace" fill="#6e6e73">BlueField-3 · pune</text>
+    <rect x="906" y="372" width="222" height="74" rx="16" fill="#ffffff" stroke="#d2d2d7" filter="url(#shadow)"/>
+      <text x="928" y="402" font-size="20" font-weight="700" fill="#1d1d1f">bf3-03</text>
+      <text x="928" y="425" font-size="13.5" font-family="'Menlo','JetBrains Mono',monospace" fill="#6e6e73">BlueField-3 · mumbai</text>
+  </g>
+
+  <!-- footer -->
+  <line x1="72" y1="560" x2="1128" y2="560" stroke="#e5e5ea" stroke-width="1"/>
+  <text x="72" y="596" font-family="'Menlo','JetBrains Mono',monospace" font-size="16" fill="#6e6e73">github.com/zyvorai/duvora</text>
+  <text x="1128" y="596" text-anchor="end" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif" font-size="16" fill="#6e6e73">Zyvor Production License v1.0</text>
+</svg>

@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: duvora
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: duvora
+  namespace: duvora
+spec:
+  selector:
+    app: duvora
+  ports:
+    - name: http
+      port: 8787
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: duvora
+  namespace: duvora
+spec:
+  serviceName: duvora
+  replicas: 1
+  selector:
+    matchLabels:
+      app: duvora
+  template:
+    metadata:
+      labels:
+        app: duvora
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 20
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: control-plane
+          # Build and push your image, then substitute its immutable digest.
+          image: ghcr.io/zyvorai/duvora:0.5.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DUVORA_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: duvora-keys
+                  key: keys.json
+          ports:
+            - name: http
+              containerPort: 8787
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+          volumeMounts:
+            - name: state
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: state
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: 2Gi

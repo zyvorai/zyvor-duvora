@@ -1,0 +1,11 @@
+.git
+__pycache__
+*.db*
+.env
+keys.json
+node_modules
+web/node_modules
+.venv
+test-results
+dist
+certs

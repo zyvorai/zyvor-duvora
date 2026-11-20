@@ -1,0 +1,14 @@
+Duvora {{ .Chart.AppVersion }} is installed in namespace {{ .Release.Namespace }}.
+
+{{- if eq .Values.service.type "NodePort" }}
+Open {{ ternary "https" "http" .Values.tls.enabled }}://<node-ip>:{{ .Values.service.nodePort }}
+{{- else }}
+kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "duvora.name" . }} 8787:{{ .Values.service.port }}
+{{- end }}
+
+Sign in as admin with the password in Secret {{ include "duvora.secretName" . }} (key admin-password).
+Change it under Govern → Users after first sign-in.
+{{- if not .Values.tls.enabled }}
+
+TLS is off: put an HTTPS proxy in front before exposing this beyond a trusted network.
+{{- end }}

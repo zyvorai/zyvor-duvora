@@ -1,0 +1,10 @@
+# Apply to the existing DPF namespace. Bind this role to your bridge identity separately.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: duvora-observer
+  namespace: dpf-operator-system
+rules:
+  - apiGroups: [provisioning.dpu.nvidia.com]
+    resources: [dpus]
+    verbs: [get, list]

@@ -1,0 +1,1 @@
+{"action":"deploy","devices":["bf3-01"],"service":"network-observer","image":"registry.example/observer@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}

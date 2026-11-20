@@ -1,0 +1,1 @@
+{"action":"isolate","devices":["bf3-01"],"policy":{"name":"tenant-private","tenant":"tenant-a","cidr":"10.42.0.0/16","ports":[443,8443]}}

@@ -1,0 +1,137 @@
+{{- if .Values.agent.enabled }}
+{{- if not (include "duvora.agentKeysEnabled" .) }}
+{{- fail "agent.enabled needs agent.keys (node name -> token) or agent.existingSecret" }}
+{{- end }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "duvora.name" . }}-agent
+  labels:
+    {{- include "duvora.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agent
+spec:
+  selector:
+    matchLabels:
+      {{- include "duvora.selector" . | nindent 6 }}
+      app.kubernetes.io/component: agent
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        {{- include "duvora.labels" . | nindent 8 }}
+        app.kubernetes.io/component: agent
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+    spec:
+      automountServiceAccountToken: false
+      # The eBPF programs attach to the node's own interfaces.
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      terminationGracePeriodSeconds: 10
+      {{- with .Values.agent.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.agent.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: agent
+          image: "{{ .Values.agent.image.repository }}:{{ .Values.agent.image.tag }}"
+          imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
+          args:
+            - --ebpf={{ .Values.agent.ebpf }}
+            - --interval={{ .Values.agent.intervalSeconds }}
+            {{- if .Values.agent.interfaces }}
+            - --interfaces={{ .Values.agent.interfaces }}
+            {{- end }}
+            {{- if not .Values.agent.isolation }}
+            - --no-isolation
+            {{- end }}
+            {{- if not .Values.agent.steering }}
+            - --no-steering
+            {{- end }}
+            {{- if not .Values.agent.aiDiscovery }}
+            - --no-ai-discovery
+            {{- end }}
+            {{- if not .Values.agent.tokenRotation }}
+            - --no-token-rotation
+            {{- end }}
+          env:
+            - name: DUVORA_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: DUVORA_URL
+              value: {{ .Values.agent.url | default (printf "%s://%s.%s.svc:%v" (ternary "https" "http" .Values.tls.enabled) (include "duvora.name" .) .Release.Namespace .Values.service.port) | quote }}
+            - name: DUVORA_AGENT_KEYS_FILE
+              value: /agent/agent-keys.json
+            - name: DUVORA_EBPF_FAILSAFE
+              value: {{ .Values.agent.failsafeSeconds | quote }}
+            {{- if .Values.tls.enabled }}
+            - name: DUVORA_CA_FILE
+              value: /tls/tls.crt
+            {{- end }}
+          securityContext:
+            # libbpf needs root inside the container for bpffs and tracefs; capabilities stay narrow.
+            runAsUser: 0
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+              add: [BPF, NET_ADMIN, PERFMON, SYS_RESOURCE]
+          resources:
+            {{- toYaml .Values.agent.resources | nindent 12 }}
+          volumeMounts:
+            - name: agent-keys
+              mountPath: /agent
+              readOnly: true
+            - name: bpffs
+              mountPath: /sys/fs/bpf
+            - name: btf
+              mountPath: /sys/kernel/btf
+              readOnly: true
+            - name: tracefs
+              mountPath: /sys/kernel/tracing
+              readOnly: true
+            - name: override
+              mountPath: /run/duvora
+              readOnly: true
+            {{- if .Values.tls.enabled }}
+            - name: tls
+              mountPath: /tls
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: agent-keys
+          secret:
+            secretName: {{ include "duvora.agentSecretName" . }}
+            items:
+              - key: agent-keys.json
+                path: agent-keys.json
+        - name: bpffs
+          hostPath:
+            path: /sys/fs/bpf
+            type: DirectoryOrCreate
+        - name: btf
+          hostPath:
+            path: /sys/kernel/btf
+        - name: tracefs
+          hostPath:
+            path: /sys/kernel/tracing
+        # Operators create /run/duvora/isolation-off or /run/duvora/steering-off on the host to turn either off locally.
+        - name: override
+          hostPath:
+            path: /run/duvora
+            type: DirectoryOrCreate
+        {{- if .Values.tls.enabled }}
+        - name: tls
+          secret:
+            secretName: {{ include "duvora.tlsSecretName" . }}
+            items:
+              - key: tls.crt
+                path: tls.crt
+        {{- end }}
+{{- end }}

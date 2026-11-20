@@ -1,0 +1,128 @@
+name: CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: make check
+      - run: python -m pip install --no-deps .
+      - run: duvoractl --help && duvora --help && duvora-agent --help
+  bpf:
+    # Kernel tests for the native eBPF objects: TCX needs Linux 6.6+, which ubuntu-24.04 runners have.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends clang llvm libbpf1 linux-libc-dev
+      - run: uname -r && ls -l /sys/kernel/btf/vmlinux
+      - run: make bpf
+      - run: sudo DUVORA_BPF_TESTS=1 python3 -m unittest tests.test_bpf_kernel -v
+      - run: python3 -m unittest tests.test_native_ebpf -v
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm --prefix web ci --no-audit --no-fund
+      - run: npm --prefix web run typecheck
+      - run: npm --prefix web test
+      - run: npm --prefix web run build
+      - run: test -f duvora/static/index.html
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - run: npm --prefix site ci --no-audit --no-fund
+      - run: npm --prefix site run build
+  helm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - run: helm lint helm/duvora
+      - run: helm lint helm/duvora --set tls.enabled=true --set tls.cert=x --set tls.key=y
+      - run: helm template duvora helm/duvora > /dev/null
+      - run: |
+          helm template duvora helm/duvora --set agent.enabled=true --set-json 'agent.keys={"node-1":"0123456789abcdef0123456789"}' | grep -q 'kind: DaemonSet'
+      - run: bash -n scripts/deploy-remote.sh scripts/deploy-container.sh
+      - run: ./scripts/deploy-remote.sh ci@example --dry-run | tail -n +2 | bash -n
+      - run: ./scripts/deploy-remote.sh ci@example --docker --dry-run | tail -n +2 | bash -n
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm --prefix web ci --no-audit --no-fund && npm --prefix web run build
+      - run: npm install --no-save playwright@1.63.0
+      - run: npx playwright install --with-deps chromium
+      - name: Exercise console workflows
+        env:
+          DUVORA_USER: admin
+          DUVORA_PASSWORD: Admin@321
+        run: |
+          python -m duvora.server --demo --db /tmp/browser.db > /tmp/server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          python -c "import urllib.request,time; [time.sleep(.2) for _ in range(10)]; urllib.request.urlopen('http://127.0.0.1:8787/healthz')"
+          node tests/e2e.cjs
+      - name: Exercise Netra node-isolation workflow against a fake Netra
+        env:
+          DUVORA_NETRA_URL: http://127.0.0.1:18870
+          DUVORA_NETRA_API_KEY: netra-test-key-0123456789abcdef
+          DUVORA_NETRA_DISCOVER: '1'
+          DUVORA_NETRA_ENFORCE: '1'
+          DUVORA_NETRA_INTERVAL: '5'
+          DUVORA_URL: http://127.0.0.1:8797
+        run: |
+          FAKE_NETRA_PORT=18870 python tests/fake_netra.py > /tmp/fake-netra.log 2>&1 &
+          fake_pid=$!
+          DUVORA_PORT=8797 python -m duvora.server --demo --db /tmp/netra.db > /tmp/netra-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" "$fake_pid"' EXIT
+          python -c "import urllib.request,time; [time.sleep(.2) for _ in range(15)]; urllib.request.urlopen('http://127.0.0.1:8797/healthz')"
+          sleep 6
+          node tests/e2e_netra.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: console-screenshots
+          path: test-results/
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t duvora:test .
+      - name: Smoke-test the image
+        run: |
+          docker run -d --name duvora -p 127.0.0.1:8787:8787 -e DUVORA_ADMIN_PASSWORD=ci-password-123 -e DUVORA_DEMO=1 -v duvora-state:/data --read-only --tmpfs /tmp duvora:test
+          for _ in $(seq 1 30); do curl -sf http://127.0.0.1:8787/healthz && break; sleep 1; done
+          curl -sf http://127.0.0.1:8787/ | grep -q '<div id="root">'
+          docker exec duvora python -m duvora.healthcheck
+      - name: Build the native eBPF agent image
+        run: |
+          docker build -f Dockerfile.agent -t duvora-agent:test .
+          docker run --rm --entrypoint python duvora-agent:test -c "from duvora.bpf.libbpf import Libbpf; from duvora.bpf import OBJ_DIR; print(Libbpf().version(), sorted(p.name for p in OBJ_DIR.glob('*.o')))"

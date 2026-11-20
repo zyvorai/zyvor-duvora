@@ -1,0 +1,17 @@
+# Host agent with native eBPF: clang compiles bpf/*.c, the runtime is Python plus the system libbpf.
+FROM debian:trixie-slim AS bpf
+RUN apt-get update && apt-get install -y --no-install-recommends clang llvm make linux-libc-dev libc6-dev \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /src
+COPY Makefile ./
+COPY bpf/ bpf/
+RUN make bpf
+
+FROM python:3.12-slim
+RUN apt-get update && apt-get install -y --no-install-recommends libbpf1 && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY duvora /app/duvora
+COPY --from=bpf /src/duvora/bpf/obj/ /app/duvora/bpf/obj/
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+# Needs CAP_BPF, CAP_NET_ADMIN and CAP_PERFMON (or root) and host networking to see the uplinks.
+ENTRYPOINT ["python", "-m", "duvora.agent", "--ebpf", "auto"]

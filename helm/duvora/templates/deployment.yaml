@@ -1,0 +1,262 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "duvora.name" . }}
+  labels:
+    {{- include "duvora.labels" . | nindent 4 }}
+spec:
+  # SQLite has a single writer: never run two pods against the same volume.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "duvora.selector" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "duvora.labels" . | nindent 8 }}
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 20
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: control-plane
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: DUVORA_DB
+              value: /data/dpu.db
+            - name: DUVORA_PORT
+              value: "8787"
+            - name: DUVORA_DEMO
+              value: {{ ternary "1" "0" .Values.demo | quote }}
+            - name: DUVORA_AUDIT_RETENTION_DAYS
+              value: {{ .Values.auditRetentionDays | quote }}
+            - name: DUVORA_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "duvora.secretName" . }}
+                  key: admin-password
+            - name: DUVORA_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "duvora.secretName" . }}
+                  key: keys.json
+                  optional: true
+            {{- if include "duvora.agentKeysEnabled" . }}
+            - name: DUVORA_AGENT_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "duvora.agentSecretName" . }}
+                  key: agent-keys.json
+            {{- end }}
+            - name: DUVORA_EBPF_SOURCE
+              value: {{ .Values.ebpf.source | quote }}
+            - name: DUVORA_EBPF_ENFORCE
+              value: {{ ternary "1" "0" .Values.ebpf.enforce | quote }}
+            - name: DUVORA_NETRA_LEASE
+              value: {{ .Values.ebpf.leaseSeconds | quote }}
+            {{- with .Values.ebpf.controllerAddresses }}
+            - name: DUVORA_CONTROLLER_ADDRESSES
+              value: {{ . | quote }}
+            {{- end }}
+            {{- if .Values.netra.url }}
+            - name: DUVORA_NETRA_URL
+              value: {{ .Values.netra.url | quote }}
+            - name: DUVORA_NETRA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.netra.existingSecret | default (printf "%s-netra" (include "duvora.name" .)) }}
+                  key: netra-api-key
+            {{- if or .Values.netra.caCert .Values.netra.existingSecret }}
+            - name: DUVORA_NETRA_CA_FILE
+              value: /netra/netra-ca.crt
+            {{- end }}
+            - name: DUVORA_NETRA_DISCOVER
+              value: {{ ternary "1" "0" .Values.netra.discover | quote }}
+            {{- with .Values.netra.nodeMap }}
+            - name: DUVORA_NETRA_NODE_MAP
+              value: {{ . | quote }}
+            {{- end }}
+            - name: DUVORA_NETRA_ENFORCE
+              value: {{ ternary "1" "0" .Values.netra.enforce | quote }}
+            - name: DUVORA_NETRA_INTERVAL
+              value: {{ .Values.netra.intervalSeconds | quote }}
+            {{- end }}
+            {{- if .Values.ai.url }}
+            - name: DUVORA_AI_URL
+              value: {{ .Values.ai.url | quote }}
+            - name: DUVORA_AI_MODEL
+              value: {{ required "ai.model is required when ai.url is set" .Values.ai.model | quote }}
+            {{- if or .Values.ai.key .Values.ai.existingSecret }}
+            - name: DUVORA_AI_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ai.existingSecret | default (printf "%s-ai" .Release.Name) }}
+                  key: ai-api-key
+            {{- end }}
+            - name: DUVORA_AI_REDACT
+              value: {{ ternary "1" "0" .Values.ai.redact | quote }}
+            - name: DUVORA_AI_ALLOW_HTTP
+              value: {{ ternary "1" "0" .Values.ai.allowHttp | quote }}
+            - name: DUVORA_AI_TIMEOUT
+              value: {{ .Values.ai.timeoutSeconds | quote }}
+            {{- end }}
+            {{- if .Values.tls.enabled }}
+            - name: DUVORA_TLS_CERT
+              value: /tls/tls.crt
+            - name: DUVORA_TLS_KEY
+              value: /tls/tls.key
+            {{- end }}
+            {{- $int := include "duvora.integrationsSecretName" . }}
+            {{- $intOn := include "duvora.integrationsEnabled" . }}
+            {{- if ne (toString .Values.agentIdentity.mtls) "off" }}
+            {{- if not (and .Values.tls.enabled .Values.agentIdentity.agentCaCert) }}
+            {{- fail "agentIdentity.mtls needs tls.enabled and agentIdentity.agentCaCert" }}
+            {{- end }}
+            - name: DUVORA_AGENT_MTLS
+              value: {{ .Values.agentIdentity.mtls | quote }}
+            {{- end }}
+            {{- if .Values.agentIdentity.agentCaCert }}
+            - name: DUVORA_AGENT_CA
+              value: /integrations/agent-ca.crt
+            {{- end }}
+            - name: DUVORA_AGENT_TOKEN_TTL
+              value: {{ .Values.agentIdentity.tokenTtlSeconds | quote }}
+            - name: DUVORA_AGENT_BOOTSTRAP_ONLY
+              value: {{ ternary "1" "0" .Values.agentIdentity.bootstrapOnly | quote }}
+            {{- with .Values.siem.url }}
+            - name: DUVORA_SIEM_URL
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.siem.syslog }}
+            - name: DUVORA_SIEM_SYSLOG
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.siem.events }}
+            - name: DUVORA_SIEM_EVENTS
+              value: {{ . | quote }}
+            {{- end }}
+            - name: DUVORA_SIEM_VERDICTS
+              value: {{ .Values.siem.verdicts | quote }}
+            - name: DUVORA_SIEM_ALLOW_HTTP
+              value: {{ ternary "1" "0" .Values.siem.allowHttp | quote }}
+            {{- if .Values.siem.caCert }}
+            - name: DUVORA_SIEM_CA_FILE
+              value: /integrations/siem-ca.crt
+            {{- end }}
+            - name: DUVORA_REQUIRE_SCAN
+              value: {{ ternary "1" "0" .Values.scan.required | quote }}
+            - name: DUVORA_SCAN_MAX_MB
+              value: {{ .Values.scan.maxMb | quote }}
+            {{- if .Values.scan.caCert }}
+            - name: DUVORA_SCAN_CA_FILE
+              value: /integrations/scan-ca.crt
+            {{- end }}
+            - name: DUVORA_INTEL_ALLOW_HTTP
+              value: {{ ternary "1" "0" .Values.intel.allowHttp | quote }}
+            {{- if .Values.intel.caCert }}
+            - name: DUVORA_INTEL_CA_FILE
+              value: /integrations/intel-ca.crt
+            {{- end }}
+            {{- with .Values.notify.url }}
+            - name: DUVORA_NOTIFY_URL
+              value: {{ . | quote }}
+            {{- end }}
+            {{- if .Values.notify.caCert }}
+            - name: DUVORA_NOTIFY_CA_FILE
+              value: /integrations/notify-ca.crt
+            {{- end }}
+            {{- if $intOn }}
+            {{- range $env, $key := dict "DUVORA_SIEM_KEY" "siem-key" "DUVORA_NOTIFY_KEY" "notify-key" "DUVORA_REGISTRY_TOKEN" "registry-token" }}
+            - name: {{ $env }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $int }}
+                  key: {{ $key }}
+                  optional: true
+            {{- end }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: 8787
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+              scheme: {{ ternary "HTTPS" "HTTP" .Values.tls.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+              scheme: {{ ternary "HTTPS" "HTTP" .Values.tls.enabled }}
+            initialDelaySeconds: 10
+          volumeMounts:
+            - name: state
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+            {{- if .Values.tls.enabled }}
+            - name: tls
+              mountPath: /tls
+              readOnly: true
+            {{- end }}
+            {{- if and .Values.netra.url (or .Values.netra.caCert .Values.netra.existingSecret) }}
+            - name: netra
+              mountPath: /netra
+              readOnly: true
+            {{- end }}
+            {{- if include "duvora.integrationsEnabled" . }}
+            - name: integrations
+              mountPath: /integrations
+              readOnly: true
+            {{- end }}
+      volumes:
+        {{- if include "duvora.integrationsEnabled" . }}
+        - name: integrations
+          secret:
+            secretName: {{ include "duvora.integrationsSecretName" . }}
+        {{- end }}
+        - name: state
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-state
+        - name: tmp
+          emptyDir: {}
+        {{- if .Values.tls.enabled }}
+        - name: tls
+          secret:
+            secretName: {{ include "duvora.tlsSecretName" . }}
+        {{- end }}
+        {{- if and .Values.netra.url (or .Values.netra.caCert .Values.netra.existingSecret) }}
+        - name: netra
+          secret:
+            secretName: {{ .Values.netra.existingSecret | default (printf "%s-netra" (include "duvora.name" .)) }}
+            items:
+              - key: netra-ca.crt
+                path: netra-ca.crt
+            optional: {{ empty .Values.netra.caCert }}
+        {{- end }}
