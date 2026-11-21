@@ -114,6 +114,8 @@ Free for non-production use under the Zyvor Production License v1.0; production 
 
 Source-available under the **[Zyvor Production License v1.0](LICENSE)** (SPDX `LicenseRef-Zyvor-Production-1.0`; see [NOTICE](NOTICE)). Evaluation is free for 30 days per organization; production use requires a commercial license from Zyvor AI Labs ([zyvor.dev/buy](https://zyvor.dev/buy), 30-day trial key available). **Zyvor Enterprise** adds supported releases, upgrade guidance, priority incident triage, a named technical contact and 24x7 critical intake: [plans](docs/SUBSCRIPTION-MODEL.md) · [pricing](https://zyvor.dev/pricing?utm_source=github&utm_medium=duvora&utm_campaign=readme_license) · [sales@zyvor.dev](mailto:sales@zyvor.dev) · [buy / get a quote](https://zyvor.dev/buy). Support from USD 600 per node per year (INR 59,999 incl. GST in India) · [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md)
 
+**Price:** INR 59,999 per DPU per year incl. 18% GST in India; US$605 per DPU per year excl. tax elsewhere. Buy: [zyvor.dev/buy](https://zyvor.dev/buy). Orders of USD 5,000 or more and quotes are invoiced in USD through Skydo.
+
 <div align="center">
 
 ### Run your DPU fleet workflow before the hardware arrives
