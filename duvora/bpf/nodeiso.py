@@ -1,5 +1,5 @@
 # Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 """Node isolation: encode an allow-list into duvora_nodeiso's maps, publish it by generation, read stats.
 

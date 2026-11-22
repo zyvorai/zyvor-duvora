@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 /* Netra node-isolation workflow against a demo server wired to tests/fake_netra.py:
    FAKE_NETRA_PORT=18870 python3 tests/fake_netra.py &

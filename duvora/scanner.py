@@ -1,5 +1,5 @@
 # Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 """Artifact scanning before deploy: OCI images (config and layers) and model files, checked for unsafe
 deserialization (pickle opcodes that import code), Keras Lambda layers, embedded secrets and risky image

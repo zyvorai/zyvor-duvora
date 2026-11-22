@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 //
 // TCP health: retransmits, resets sent and resets received, node-wide.
 #include "duvora_bpf.h"

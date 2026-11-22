@@ -1,5 +1,5 @@
 # Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 """Payload inspection for flows a steering rule marks `inspect`: TLS SNI and HTTP request parsing, LLM
 traffic classification, and local detectors for prompt injection, secrets and personal data.

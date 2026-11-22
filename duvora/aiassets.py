@@ -1,5 +1,5 @@
 # Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 """AI asset discovery: inference runtimes, vector stores and MCP servers listening on nodes, plus LLM
 endpoints seen by inspection, checked against an admin-managed sanctioned list.

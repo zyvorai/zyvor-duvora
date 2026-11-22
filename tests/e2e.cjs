@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 /* Run against a fresh demo server with a built console (make web).
    npm install --no-save playwright@1.63.0 && npx playwright install chromium

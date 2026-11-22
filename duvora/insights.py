@@ -1,5 +1,5 @@
 # Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 """Local, dependency-free analytics: metric baselines and anomalies, new egress destinations,
 threshold forecasts, allow-list suggestions and incident evidence. Nothing here calls out."""

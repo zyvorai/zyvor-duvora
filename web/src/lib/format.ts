@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 export const sourceLabel = (s: string) =>
   ({ simulator: 'Simulated', 'linux-pci': 'Linux PCI', 'nvidia-dpf': 'NVIDIA DPF', 'netra-ebpf': 'Netra eBPF', 'duvora-ebpf': 'Native eBPF' })[s] || s;

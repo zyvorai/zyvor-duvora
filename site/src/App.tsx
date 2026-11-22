@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 import Hero from './sections/Hero';
 import Stats from './sections/Stats';
@@ -36,7 +36,7 @@ export default function App() {
         <Cta />
       </main>
       <footer className="foot">
-        Zyvor Production License · <a href={REPO}>GitHub</a> · <a href="#support">Support</a> · <a href="https://zyvor.dev">zyvor.dev</a> · A Zyvor AI Labs project. Duvora 0.5.0 is a runnable evaluation release; see the <a href={`${REPO}/blob/main/docs/STATUS.md`}>capability matrix</a>.
+        Zyvor Production Licence · <a href={REPO}>GitHub</a> · <a href="#support">Support</a> · <a href="https://zyvor.dev">zyvor.dev</a> · A Zyvor AI Labs project. Duvora 0.5.0 is a runnable evaluation release; see the <a href={`${REPO}/blob/main/docs/STATUS.md`}>capability matrix</a>.
       </footer>
     </>
   );
