@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Capture the README console gallery (docs/ux/console-*.jpg) from a throwaway demo server.
 // Needs a built console (make web), Google Chrome, macOS `sips`, and Playwright:

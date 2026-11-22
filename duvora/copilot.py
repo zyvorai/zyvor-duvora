@@ -1,5 +1,5 @@
 # Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 """Ops copilot: an LLM tool loop over read-only fleet tools. The only state it can create is a plan
 preview (admins only); applying still needs the plan's typed confirmation through the normal API."""

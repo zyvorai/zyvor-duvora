@@ -1,5 +1,5 @@
 <!-- Copyright 2026 Zyvor AI Labs. -->
-<!-- SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0 -->
+<!-- SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0 -->
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Duvora — Infrastructure. In your control. DPU fleet control plane: plans, isolation, telemetry, incidents and evidence. Evaluation release, simulation-first.">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="630" gradientUnits="userSpaceOnUse">
@@ -60,7 +60,7 @@
   <!-- license / stack pills -->
   <g font-family="'Helvetica Neue',Helvetica,Arial,sans-serif">
     <rect x="72" y="424" width="132" height="34" rx="17" fill="#1c1c1e" stroke="#3a3a3c"/>
-    <text x="138.0" y="446" text-anchor="middle" font-size="14.5" font-weight="600" font-family="'Menlo','JetBrains Mono',monospace" fill="#f5f5f7">Zyvor PL 1.0</text>
+    <text x="138.0" y="446" text-anchor="middle" font-size="14.5" font-weight="600" font-family="'Menlo','JetBrains Mono',monospace" fill="#f5f5f7">Zyvor PL 2.0</text>
     <rect x="216" y="424" width="132" height="34" rx="17" fill="#1c1c1e" stroke="#3a3a3c"/>
     <text x="282.0" y="446" text-anchor="middle" font-size="14.5" font-weight="600" font-family="'Menlo','JetBrains Mono',monospace" fill="#f5f5f7">Python 3.11+</text>
     <rect x="360" y="424" width="132" height="34" rx="17" fill="#1c1c1e" stroke="#3a3a3c"/>
@@ -101,5 +101,5 @@
   <!-- footer -->
   <line x1="72" y1="560" x2="1128" y2="560" stroke="#2c2c2e" stroke-width="1"/>
   <text x="72" y="596" font-family="'Menlo','JetBrains Mono',monospace" font-size="16" fill="#a1a1a6">github.com/zyvorai/duvora</text>
-  <text x="1128" y="596" text-anchor="end" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif" font-size="16" fill="#a1a1a6">Zyvor Production License v1.0</text>
+  <text x="1128" y="596" text-anchor="end" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif" font-size="16" fill="#a1a1a6">Zyvor Production Licence v2.0</text>
 </svg>

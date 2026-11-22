@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 // Shared prelude for Duvora's eBPF objects: no libbpf headers, no vmlinux.h.
 #ifndef DUVORA_BPF_H
 #define DUVORA_BPF_H

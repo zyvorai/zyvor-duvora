@@ -1,5 +1,5 @@
 # Copyright 2026 Zyvor AI Labs.
-# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 """Generate the Duvora share cards (light + dark) as SVG from one palette.
 
     python3 docs/social/build-share-cards.py docs/social
@@ -29,7 +29,7 @@ DEVICES = [
     ("bf3-02", "BlueField-3 · pune"),
     ("bf3-03", "BlueField-3 · mumbai"),
 ]
-PILLS = ["Zyvor PL 1.0", "Python 3.11+", "React + Vite", "k3s / Helm"]
+PILLS = ["Zyvor PL 2.0", "Python 3.11+", "React + Vite", "k3s / Helm"]
 
 
 def svg(p, label):
@@ -60,7 +60,7 @@ def svg(p, label):
             f'font-family="{MONO}" fill="{p["ink"]}">{text}</text>')
         px += pw + 12
     return f'''<!-- Copyright 2026 Zyvor AI Labs. -->
-<!-- SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0 -->
+<!-- SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0 -->
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="{label}">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="630" gradientUnits="userSpaceOnUse">
@@ -142,7 +142,7 @@ def svg(p, label):
   <!-- footer -->
   <line x1="72" y1="560" x2="1128" y2="560" stroke="{p['hair']}" stroke-width="1"/>
   <text x="72" y="596" font-family="{MONO}" font-size="16" fill="{p['sec']}">github.com/zyvorai/duvora</text>
-  <text x="1128" y="596" text-anchor="end" font-family="{SANS}" font-size="16" fill="{p['sec']}">Zyvor Production License v1.0</text>
+  <text x="1128" y="596" text-anchor="end" font-family="{SANS}" font-size="16" fill="{p['sec']}">Zyvor Production Licence v2.0</text>
 </svg>
 '''
 

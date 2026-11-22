@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 import { links } from '../links';
 
@@ -7,7 +7,7 @@ export default function Cta() {
   return (
     <section className="section cta">
       <h2>Run your DPU fleet workflow before the hardware arrives.</h2>
-      <p className="lede">Duvora is source-available under the Zyvor Production License v1.0: a commercial license is required to run it. Zyvor Enterprise adds supported releases, upgrade guidance, priority incident triage, a named technical contact and 24x7 critical intake.</p>
+      <p className="lede">Duvora is source-available under the Zyvor Production Licence v2.0: a commercial license is required to run it. Zyvor Enterprise adds supported releases, upgrade guidance, priority incident triage, a named technical contact and 24x7 critical intake.</p>
       <div className="cta-row center">
         <a className="btn" href={links.demo}>Book a demo</a>
         <a className="btn btn-dark" href={links.poc}>Start a 30-day PoC</a>

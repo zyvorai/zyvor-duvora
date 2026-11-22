@@ -1,5 +1,5 @@
 # Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 """Optional LLM over an OpenAI-compatible chat completions API (Ollama, vLLM, LM Studio, hosted).
 Without DUVORA_AI_URL nothing leaves the controller and callers fall back to templates."""
